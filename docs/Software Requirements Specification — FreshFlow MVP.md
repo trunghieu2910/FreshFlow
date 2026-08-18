@@ -1,8 +1,8 @@
 # Software Requirements Specification — FreshFlow MVP
 
-**Phiên bản:** 1.0  
-**Ngày:** 17 tháng 8 năm 2026  
-**Trạng thái:** Baseline cho MVP 12 tuần  
+**Phiên bản:** 1.1  
+**Ngày:** 18 tháng 8 năm 2026  
+**Trạng thái:** Scope change đã chốt cho MVP 12 tuần — bổ sung Driver  
 **Tài liệu liên quan:** `scope.md`, backlog FreshFlow MVP 12 tuần, ERD, API map và test plan
 
 ## 1. Giới thiệu
@@ -15,17 +15,18 @@ SRS tập trung vào hành vi có thể kiểm chứng. Mỗi yêu cầu có mã
 
 ### 1.2. Phạm vi
 
-FreshFlow MVP là nền tảng đặt món cho một cửa hàng trong một order. Customer sử dụng Android Kotlin để xem catalog, quản lý cart, checkout và theo dõi order. Merchant sử dụng React Web để quản lý store/product và xử lý order. Backend Java Spring Boot cung cấp REST API, PostgreSQL persistence, JWT/RBAC, validation, transaction và các cơ chế bảo vệ inventory.
+FreshFlow MVP là nền tảng đặt món cho một cửa hàng trong một order. Customer sử dụng Android Kotlin để xem catalog, quản lý cart, checkout và theo dõi order. Merchant sử dụng React Web để quản lý store/product, dispatch order và xử lý dispute. Driver sử dụng Android Kotlin app riêng để xem order được Backend gán, nhập OTP/PIN và báo giao thất bại. Backend Java Spring Boot cung cấp REST API, PostgreSQL persistence, JWT/RBAC, validation, transaction và các cơ chế bảo vệ inventory.
 
-MVP không bao gồm Electron, driver workflow, map, chat, push notification thật, thanh toán thật, Kafka, Redis, Kubernetes hoặc cloud production.
+MVP không bao gồm Electron, GPS/map, chat, push notification thật, thanh toán thật, Kafka, Redis, Kubernetes hoặc cloud production. Driver workflow thin được đưa vào MVP; chỉ các delivery capability nâng cao mới để future.
 
 ### 1.3. Định nghĩa, thuật ngữ và viết tắt
 
 | Thuật ngữ | Định nghĩa |
 |---|---|
-| Customer | Người mua và tạo order trên Android |
-| Merchant | Chủ cửa hàng quản lý catalog và order trên React Web |
-| Store | Cửa hàng thuộc quyền sở hữu của merchant |
+| Customer | Người mua và tạo order trên Android Customer app |
+| Merchant | Chủ cửa hàng quản lý catalog, order và delivery trên React Web |
+| Driver | Người giao order sử dụng Android Driver app |
+| Store | Cửa hàng thuộc quyền sở hữu của merchant và có thể có nhiều Driver |
 | Catalog | Store, category và product có thể hiển thị |
 | Cart | Danh sách product customer đang chọn trước checkout |
 | Order | Đơn hàng được tạo từ cart và thuộc một store |
@@ -38,16 +39,20 @@ MVP không bao gồm Electron, driver workflow, map, chat, push notification th�
 | MVP | Minimum Viable Product trong phạm vi 12 tuần |
 | API | Application Programming Interface |
 | Room | SQLite persistence layer dùng cho cart local trên Android |
-| Mock Payment | Module giả lập payment success/failure, không xử lý tiền thật |
+| Mock Payment | Module giả lập payment success/failure/refund, không xử lý tiền thật |
+| OTP/PIN | Mã giao hàng ngắn do Backend tạo, Customer hiển thị và Driver nhập để xác nhận nhận món |
+| Delivery Assignment | Quan hệ giữa một Order và tối đa một Driver tại một thời điểm |
+| Dispute | Khiếu nại delivery do Customer mở và Merchant xử lý trong MVP |
 
 ### 1.4. Actor và kênh sử dụng
 
 | Actor | Kênh | Mục tiêu |
 |---|---|---|
-| CUSTOMER | Android Kotlin | Tìm món, quản lý cart, checkout và xem order của mình |
-| MERCHANT | React Web | Quản lý store/product và xử lý order của store |
-| FreshFlow Backend | Spring Boot | Xác thực, phân quyền, xử lý nghiệp vụ và persistence |
-| Payment Mock | Backend module | Trả success/failure để kiểm tra checkout |
+| CUSTOMER | Android Kotlin | Tìm món, quản lý cart, checkout, xem OTP/PIN và dispute order của mình |
+| MERCHANT | React Web | Quản lý store/product, xử lý order, dispatch delivery và giải quyết dispute |
+| DRIVER | Android Kotlin | Xem order được gán, nhập OTP/PIN và báo giao thất bại |
+| FreshFlow Backend | Spring Boot | Xác thực, phân quyền, assignment Driver, xử lý nghiệp vụ và persistence |
+| Payment Mock | Backend module | Trả success/failure/refund để kiểm tra checkout và compensation |
 
 ## 2. Quy tắc nghiệp vụ
 
@@ -69,6 +74,13 @@ MVP không bao gồm Electron, driver workflow, map, chat, push notification th�
 | BR-14 | Timestamp lưu theo UTC; API error có schema thống nhất. |
 | BR-15 | Tất cả endpoint ghi dữ liệu phải validate input ở backend. |
 | BR-16 | Trong MVP, payment là mock và không lưu card number, CVV hoặc payment secret. |
+| BR-17 | Một Store có thể có nhiều Driver; mỗi Order chỉ có tối đa một Driver active tại một thời điểm. |
+| BR-18 | Backend chỉ tự gán Order cho Driver `isAvailable = true`, ưu tiên Driver có ít Order ở `SHIPPING` nhất; không có GPS/map assignment. |
+| BR-19 | `SHIPPING -> COMPLETED` chỉ hợp lệ khi Driver được gán gửi OTP/PIN đúng; Customer không cần nút xác nhận riêng. |
+| BR-20 | Driver có thể chuyển `SHIPPING -> DELIVERY_FAILED` với failure reason; Merchant quyết định retry hoặc cancel. |
+| BR-21 | Customer có thể mở `DISPUTED` trong `SHIPPING` hoặc sau `COMPLETED`; Merchant xử lý `DISPUTED -> COMPLETED` hoặc `DISPUTED -> CANCELLED`. |
+| BR-22 | Payment failure lưu record `Order=CANCELLED`, `Payment=FAILED` và release inventory; payment success nhưng compensation cần thiết dùng `Payment=REFUNDED`. |
+| BR-23 | Mã OTP/PIN không lưu plaintext trong database hoặc log; request giao hàng phải kiểm tra Driver ownership và số lần thử hợp lý. |
 
 ## 3. Yêu cầu chức năng
 
@@ -110,18 +122,30 @@ Các endpoint yêu cầu đăng nhập phải kiểm tra Bearer JWT và từ ch�
 
 #### FR-AUTH-04 — Role-Based Access Control
 
-Hệ thống phải hỗ trợ tối thiểu hai role `CUSTOMER` và `MERCHANT`.
+Hệ thống phải hỗ trợ ba role MVP `CUSTOMER`, `MERCHANT` và `DRIVER`.
 
 **Acceptance criteria:**
 
-- Customer không gọi được merchant management endpoint.
+- Customer không gọi được merchant hoặc driver endpoint.
 - Merchant không xem order của store khác.
+- Driver chỉ xem và thao tác trên order được Backend gán cho mình.
 - Role không thể tự nâng quyền qua request body.
 - Role sai trả `403 Forbidden`.
 
 #### FR-AUTH-05 — Profile cơ bản
 
 User đã đăng nhập có thể lấy thông tin profile tối thiểu gồm id, display name, email và role.
+
+#### FR-AUTH-06 — Driver availability và profile
+
+Driver đã đăng nhập có thể xem profile và cập nhật cờ `isAvailable` của chính mình.
+
+**Acceptance criteria:**
+
+- Driver không thể thay đổi role hoặc Store ownership bằng request body.
+- Driver chỉ chuyển availability của chính mình.
+- Backend không assign order cho Driver `isAvailable = false`.
+- Driver account được seed cho local demo.
 
 ### 3.2. Store và Catalog
 
@@ -244,7 +268,18 @@ Merchant có thể xem order thuộc store mình và lọc theo status/date cơ 
 
 #### FR-WEB-07 — Order status update
 
-Merchant có thể chuyển order qua các trạng thái được phép trong state machine.
+Merchant có thể chuyển order qua các trạng thái được phép trong state machine. Merchant có thể dispatch order sang Driver khi Backend đã gán Driver phù hợp.
+
+#### FR-WEB-09 — Delivery assignment và dispute handling
+
+Merchant có thể xem Driver assignment của order, dispatch order, xem delivery failure và xử lý dispute theo quyền.
+
+**Acceptance criteria:**
+
+- Merchant chỉ thấy Driver thuộc Store mình.
+- Không dispatch khi chưa có Driver được gán.
+- Merchant có thể chọn retry hoặc cancel từ `DELIVERY_FAILED`.
+- Merchant có thể resolve `DISPUTED` thành `COMPLETED` hoặc `CANCELLED`.
 
 **Acceptance criteria:**
 
@@ -311,13 +346,58 @@ Customer chỉ xem được order của chính mình, gồm status, item snapsho
 
 Android App phải tách tối thiểu UI, ViewModel/state, repository/API và local data layer theo MVVM.
 
+#### FR-MOB-09 — Delivery OTP/PIN và dispute
+
+Customer có thể xem OTP/PIN khi order ở `SHIPPING`, gửi dispute trong `SHIPPING` hoặc `COMPLETED`, và xem kết quả xử lý dispute.
+
+**Acceptance criteria:**
+
+- OTP/PIN chỉ hiển thị cho Customer sở hữu order.
+- Không ghi OTP/PIN vào log.
+- Customer thấy trạng thái `DELIVERY_FAILED`, `DISPUTED`, `COMPLETED` và `CANCELLED` rõ ràng.
+- Dispute request có reason bắt buộc và message tùy chọn.
+
 **Acceptance criteria:**
 
 - UI không gọi Retrofit trực tiếp trong Activity/Composable.
 - Network error được chuyển thành UI state.
 - Coroutine không bị launch tùy tiện gây memory leak trong màn hình chính.
 
-### 3.5. Order và Checkout
+### 3.5. Android Kotlin cho Driver
+
+#### FR-DRV-01 — Driver login và role routing
+
+Driver có thể đăng nhập Android bằng credential hợp lệ và chỉ truy cập được Driver routes.
+
+#### FR-DRV-02 — Assigned order list
+
+Driver xem danh sách order được Backend gán cho mình, gồm order code, store, delivery address text, item summary và status.
+
+**Acceptance criteria:**
+
+- Driver không xem được order không được gán.
+- Danh sách có loading, empty và error state.
+- Order đã `COMPLETED` hoặc `CANCELLED` được phân biệt với order đang giao.
+
+#### FR-DRV-03 — Driver availability
+
+Driver có thể bật/tắt `isAvailable` của chính mình. Backend chỉ assignment cho Driver available.
+
+#### FR-DRV-04 — Delivery confirmation bằng OTP/PIN
+
+Driver nhập OTP/PIN của order được gán để chuyển `SHIPPING -> COMPLETED`.
+
+**Acceptance criteria:**
+
+- Mã sai trả lỗi nghiệp vụ và không đổi state.
+- Driver không đúng assignment trả `403` hoặc lỗi ownership.
+- Mã đúng ghi `deliveredAt` và audit event.
+
+#### FR-DRV-05 — Delivery failure
+
+Driver báo giao thất bại với một reason hợp lệ; order chuyển `SHIPPING -> DELIVERY_FAILED`.
+
+### 3.6. Order và Checkout
 
 #### FR-ORD-01 — Tạo Order từ cart
 
@@ -333,15 +413,28 @@ Khi tạo order, backend lưu product name và unit price tại thời điểm c
 
 #### FR-ORD-04 — Order state machine
 
-Order phải hỗ trợ tối thiểu:
+Order phải hỗ trợ các state:
 
 ```text
-PENDING → CONFIRMED → PREPARING → READY → COMPLETED
-PENDING → CANCELLED
-CONFIRMED → CANCELLED (nếu policy cho phép)
+PENDING, PROCESSING, SHIPPING, DELIVERY_FAILED, DISPUTED, COMPLETED, CANCELLED
 ```
 
-`CANCELLED` và `COMPLETED` là trạng thái kết thúc trong MVP. Transition không nằm trong state machine phải trả lỗi nghiệp vụ.
+Các transition chính:
+
+```text
+PENDING -> PROCESSING
+PENDING -> CANCELLED
+PROCESSING -> SHIPPING (Merchant dispatch, Driver đã được assign)
+PROCESSING -> CANCELLED
+SHIPPING -> COMPLETED (Driver gửi OTP/PIN hợp lệ)
+SHIPPING -> DELIVERY_FAILED
+SHIPPING -> DISPUTED
+DELIVERY_FAILED -> PROCESSING hoặc CANCELLED
+COMPLETED -> DISPUTED trong thời hạn policy
+DISPUTED -> COMPLETED hoặc CANCELLED do Merchant resolve
+```
+
+`CANCELLED` và `COMPLETED` là trạng thái kết thúc, ngoại lệ là `COMPLETED -> DISPUTED` trong thời hạn dispute policy. Transition không nằm trong state machine phải trả lỗi nghiệp vụ.
 
 #### FR-ORD-05 — Order history
 
@@ -349,7 +442,7 @@ Customer xem được danh sách order của chính mình, có pagination và or
 
 #### FR-ORD-06 — Customer cancel
 
-Customer chỉ được hủy order trước khi order chuyển sang `PREPARING`, theo rule hiện hành.
+Customer chỉ được hủy order ở `PENDING`, trước khi Merchant tiếp nhận order. Order sau `PENDING` không được Customer tự hủy trong MVP.
 
 #### FR-ORD-07 — Idempotent checkout
 
@@ -358,6 +451,22 @@ Request checkout cùng user và cùng Idempotency-Key phải trả lại kết q
 #### FR-ORD-08 — Transaction boundary
 
 Tạo order và các dữ liệu bắt buộc phải có transaction boundary rõ ràng; lỗi giữa chừng phải không để lại dữ liệu nửa vời theo policy đã thiết kế.
+
+#### FR-ORD-09 — Driver assignment
+
+Backend tự gán mỗi order cho tối đa một Driver thuộc Store, có `isAvailable = true`, ưu tiên Driver có ít order `SHIPPING` nhất. Không giới hạn cứng số order trong MVP.
+
+#### FR-ORD-10 — Delivery confirmation
+
+Backend sinh OTP/PIN khi order chuyển `SHIPPING`. Chỉ Driver được gán cho order mới được gửi mã; mã đúng mới chuyển order sang `COMPLETED`.
+
+#### FR-ORD-11 — Delivery failure
+
+Driver có thể báo `DELIVERY_FAILED` với reason. Merchant có thể retry về `PROCESSING` hoặc cancel về `CANCELLED`; cancellation sau payment success phải refund mock.
+
+#### FR-ORD-12 — Dispute resolution
+
+Customer có thể mở dispute trong `SHIPPING` hoặc sau `COMPLETED`. Merchant xử lý dispute thành `COMPLETED` hoặc `CANCELLED` và phải lưu resolution/audit.
 
 ### 3.6. Inventory
 
@@ -403,6 +512,10 @@ Payment failure làm checkout thất bại và kích hoạt release/compensation
 
 Cùng payment reference không được tạo kết quả thanh toán mâu thuẫn hoặc xử lý nhiều lần.
 
+#### FR-PAY-05 — Mock refund
+
+Nếu payment đã `SUCCEEDED` nhưng order bị cancel vì delivery failure, dispute resolution hoặc system/inventory compensation, Payment Mock phải ghi nhận `REFUNDED` idempotently; payment `FAILED` không được refund.
+
 #### FR-NOTI-01 — Notification inbox tùy chọn có điều kiện
 
 Nếu được thực hiện trong MVP, hệ thống lưu notification tối thiểu cho các order status transition quan trọng. Push/email thật không thuộc MVP.
@@ -431,6 +544,8 @@ Nếu được thực hiện trong MVP, hệ thống lưu notification tối thi
 | NFR-SEC-06 | Payment mock không được nhận hoặc lưu số thẻ thật. |
 | NFR-SEC-07 | Error response không được lộ stack trace, SQL, password hoặc internal secret. |
 | NFR-SEC-08 | Android không ghi token và dữ liệu nhạy cảm vào log debug. |
+| NFR-SEC-09 | Driver endpoint phải kiểm tra assignment ownership; Driver không được submit OTP/PIN cho order không được gán. |
+| NFR-SEC-10 | OTP/PIN không được lưu plaintext hoặc xuất hiện trong log; request sai mã phải trả lỗi nghiệp vụ không lộ secret. |
 
 ### 4.3. Khả năng bảo trì — Maintainability
 
@@ -461,6 +576,7 @@ Nếu được thực hiện trong MVP, hệ thống lưu notification tối thi
 | NFR-REL-02 | Checkout lỗi phải trả error code ổn định và không để order ở trạng thái không xác định. |
 | NFR-REL-03 | Migration và seed data phải chạy lặp an toàn trong môi trường local được hỗ trợ. |
 | NFR-REL-04 | Docker Compose phải có volume PostgreSQL để dữ liệu không mất khi container restart trong local. |
+| NFR-REL-05 | Delivery transition và dispute resolution phải có audit actor/from/to/reason/timestamp; request đến trễ không được ghi đè state mới. |
 
 ## 5. Giao diện hệ thống
 
@@ -478,7 +594,7 @@ React Web có tối thiểu các route sau:
 | `/products/new` | MERCHANT | Tạo product |
 | `/products/:id/edit` | MERCHANT | Sửa product |
 | `/orders` | MERCHANT | Order list/filter |
-| `/orders/:id` | MERCHANT | Order detail và status update |
+| `/orders/:id` | MERCHANT | Order detail, Driver assignment, status update và dispute resolution |
 
 React Web phải có loading, empty, error, success feedback, route guard và responsive layout cơ bản.
 
@@ -494,7 +610,7 @@ Android App có tối thiểu các màn hình/route:
 | Cart | CUSTOMER | Quản lý Room cart |
 | Checkout result | CUSTOMER | Xác nhận tạo order hoặc hiển thị lỗi |
 | Order history | CUSTOMER | Xem danh sách order |
-| Order detail | CUSTOMER | Xem item snapshot, total và status |
+| Order detail | CUSTOMER | Xem item snapshot, total, status, OTP/PIN, delivery failure/dispute result |
 
 ### 5.2. Giao diện phần cứng — Hardware Interface
 
@@ -515,17 +631,28 @@ Không có giao tiếp phần cứng bắt buộc trong MVP. Android chạy trê
 | Database | PostgreSQL qua JPA/Flyway |
 | Android local data | Room/SQLite cho cart |
 
+#### Android Driver app routes
+
+| Màn hình | Quyền | Mục đích |
+|---|---|---|
+| Login | DRIVER | Đăng nhập Driver |
+| Availability | DRIVER | Bật/tắt `isAvailable` |
+| Assigned orders | DRIVER | Xem order được Backend gán |
+| Delivery detail | DRIVER | Xem thông tin giao và nhập OTP/PIN |
+| Delivery failure | DRIVER | Chọn reason giao thất bại |
+
 #### API resource tối thiểu
 
 | Resource | Endpoint mẫu | Actor |
 |---|---|---|
 | Auth | `POST /api/v1/auth/register`, `POST /api/v1/auth/login` | Public |
 | Profile | `GET /api/v1/me` | Authenticated |
+| Driver | `GET/PATCH /api/v1/driver/me/availability`, `GET /api/v1/driver/orders`, `POST /api/v1/driver/orders/{id}/confirm-delivery`, `POST /api/v1/driver/orders/{id}/delivery-failure` | DRIVER |
 | Stores | `GET /api/v1/stores`, `POST /api/v1/stores` | Customer/Merchant |
 | Categories | `GET/POST/PATCH/DELETE /api/v1/.../categories` | Merchant/Customer read |
 | Products | `GET/POST/PATCH/DELETE /api/v1/.../products` | Merchant/Customer read |
 | Orders | `POST /api/v1/orders`, `GET /api/v1/orders`, `GET /api/v1/orders/{id}` | Customer |
-| Merchant orders | `GET /api/v1/merchant/orders`, `PATCH /api/v1/merchant/orders/{id}/status` | Merchant |
+| Merchant orders | `GET /api/v1/merchant/orders`, `PATCH /api/v1/merchant/orders/{id}/status`, `POST /api/v1/merchant/orders/{id}/dispatch`, `POST /api/v1/merchant/orders/{id}/dispute-resolution` | Merchant |
 | Inventory | `GET/PATCH /api/v1/merchant/inventory` | Merchant/Backend |
 | Payment mock | Internal service/module endpoint hoặc test fixture | Backend |
 
@@ -548,7 +675,12 @@ Tên endpoint cuối cùng có thể điều chỉnh trong API design nhưng ph�
 | `inventory_items` | Stock, reserved stock, version |
 | `stock_adjustments` | Audit tăng/giảm stock nếu thực hiện trong MVP |
 | `idempotency_records` | Kết quả request checkout đã xử lý |
-| `payments` | Mock payment reference/status |
+| `payments` | Mock payment reference/status/refund status |
+| `delivery_assignments` | Order-to-Driver assignment, assignedAt, dispatchedAt, deliveredAt, failure reason |
+| `driver_profiles` | Driver availability and Store relation |
+| `delivery_credentials` | OTP/PIN hash, expiry, attempt count and usedAt |
+| `disputes` | Customer reason, Merchant resolution, status and audit timestamps |
+| `order_audits` | Append-only actor/from/to/reason/timestamp history |
 | `notifications` | In-app notification nếu thực hiện |
 
 ### 6.2. Yêu cầu dữ liệu
@@ -564,29 +696,37 @@ Tên endpoint cuối cùng có thể điều chỉnh trong API design nhưng ph�
 
 ## 7. Order state machine
 
-```text
-PENDING
-  ├── payment success ──> CONFIRMED
-  ├── customer/system cancel ──> CANCELLED
-  └── payment failure ──> CANCELLED
-
-CONFIRMED
-  ├── merchant starts preparation ──> PREPARING
-  └── merchant/system cancel nếu policy cho phép ──> CANCELLED
-
-PREPARING ── merchant finishes preparation ──> READY
-READY ── pickup/completion flow ──> COMPLETED
-```
-
-Các transition sau không hợp lệ trong MVP:
+Order state và Payment state được tách biệt. Order có các state:
 
 ```text
-CANCELLED -> CONFIRMED
-CANCELLED -> PREPARING
-COMPLETED -> PENDING
-COMPLETED -> CANCELLED
-PREPARING -> PENDING
+PENDING, PROCESSING, SHIPPING, DELIVERY_FAILED, DISPUTED, COMPLETED, CANCELLED
 ```
+
+Payment có các state:
+
+```text
+PENDING, SUCCEEDED, FAILED, REFUNDED
+```
+
+Luồng chính:
+
+```text
+[*] -> PENDING: Payment SUCCEEDED + inventory reserved
+PENDING -> PROCESSING: Merchant accepts
+PENDING -> CANCELLED: Customer cancel hoặc system/payment failure
+PROCESSING -> SHIPPING: Merchant dispatch và Backend đã assign Driver
+PROCESSING -> CANCELLED: Merchant/System cancel
+SHIPPING -> COMPLETED: Driver nhập OTP/PIN hợp lệ
+SHIPPING -> DELIVERY_FAILED: Driver báo failure reason
+SHIPPING -> DISPUTED: Customer mở dispute
+DELIVERY_FAILED -> PROCESSING: Merchant retry
+DELIVERY_FAILED -> CANCELLED: Merchant cancel + refund nếu payment success
+COMPLETED -> DISPUTED: Customer mở dispute trong policy window
+DISPUTED -> COMPLETED: Merchant resolve delivered
+DISPUTED -> CANCELLED: Merchant resolve failed + refund nếu payment success
+```
+
+Transition không nằm trong state machine phải trả lỗi nghiệp vụ. `CANCELLED` là terminal. `COMPLETED` có thể mở `DISPUTED` trong thời hạn policy nhưng không tự quay lại xử lý giao. `SHIPPING -> COMPLETED` chỉ hợp lệ khi đúng Driver được gán nhập OTP/PIN đúng.
 
 ## 8. Yêu cầu kiểm thử
 
@@ -604,6 +744,11 @@ PREPARING -> PENDING
 | TEST-10 | Android test cho ViewModel state, Room cart và network error mapping ở mức phù hợp. |
 | TEST-11 | Smoke test chạy customer checkout và merchant status update với môi trường Docker. |
 | TEST-12 | Regression test phải chạy trước mỗi release candidate. |
+| TEST-13 | Driver authorization test: Driver chỉ xem order được assign và không submit OTP cho order khác. |
+| TEST-14 | OTP/PIN test: mã đúng hoàn tất delivery, mã sai không đổi state, mã hết hạn bị từ chối. |
+| TEST-15 | Delivery failure test: Driver báo reason, Merchant retry hoặc cancel; cancel sau payment success tạo refund mock. |
+| TEST-16 | Dispute test: Customer mở dispute ở SHIPPING/COMPLETED; Merchant resolve COMPLETED/CANCELLED và audit được lưu. |
+| TEST-17 | Driver assignment test: Store có nhiều Driver; Backend chỉ chọn available và ưu tiên ít order SHIPPING hơn. |
 
 ## 9. Tiêu chí chấp nhận theo workflow
 
@@ -629,6 +774,20 @@ PREPARING -> PENDING
 
 **Given** Merchant cố cập nhật order của store khác hoặc dùng transition sai, **then** API trả `403` hoặc lỗi nghiệp vụ thích hợp.
 
+### 9.4. Driver delivery
+
+**Given** Driver đã đăng nhập và được gán order, **when** mở assigned orders, **then** app chỉ hiển thị order thuộc assignment của Driver.
+
+**Given** order đang `SHIPPING`, **when** Driver nhập OTP/PIN đúng, **then** Backend chuyển order sang `COMPLETED` và ghi audit.
+
+**Given** Driver không giao được món, **when** gửi failure reason hợp lệ, **then** order chuyển `DELIVERY_FAILED` và Merchant có thể retry hoặc cancel.
+
+### 9.5. Dispute
+
+**Given** order đang `SHIPPING` hoặc `COMPLETED`, **when** Customer mở dispute, **then** order chuyển `DISPUTED` và Merchant thấy dispute cần xử lý.
+
+**Given** Merchant resolve dispute là giao thành công, **then** order về `COMPLETED`; nếu resolve là giao thất bại, **then** order `CANCELLED` và payment success được refund mock.
+
 ## 10. Traceability matrix
 
 | Capability | Requirement | Client/Module | Backlog phase |
@@ -638,9 +797,11 @@ PREPARING -> PENDING
 | Catalog | FR-CAT-01 đến FR-CAT-08 | catalog/backend, React, Android | 02–03 |
 | Merchant web | FR-WEB-01 đến FR-WEB-08 | React Web | 03 React Web |
 | Android customer | FR-MOB-01 đến FR-MOB-08 | Android Kotlin | 04 Android Kotlin |
-| Order | FR-ORD-01 đến FR-ORD-08 | order/backend, Android, React | 02, 04, 05 |
+| Order | FR-ORD-01 đến FR-ORD-12 | order/backend, Android Customer, React, Android Driver | 02, 04, 05 |
 | Inventory | FR-INV-01 đến FR-INV-06 | backend/database | 02, 05 |
-| Payment mock | FR-PAY-01 đến FR-PAY-04 | backend/module | 05 Integration |
+| Payment mock | FR-PAY-01 đến FR-PAY-05 | backend/module | 05 Integration |
+| Driver delivery | FR-DRV-01 đến FR-DRV-05, BR-17 đến BR-23 | Android Driver, backend, React Merchant | 05 Integration |
+| Dispute | FR-ORD-12, FR-MOB-09, FR-WEB-09, TEST-16 | Customer, Merchant, backend | 05 Integration |
 | Quality | NFR-REL, TEST-01 đến TEST-12 | backend, clients, CI/Docker | 05 Integration & Portfolio |
 
 ## 11. Ràng buộc hệ thống
@@ -651,8 +812,9 @@ PREPARING -> PENDING
 4. Mọi public API phải dùng DTO, không expose trực tiếp JPA entity nếu tạo rủi ro contract hoặc bảo mật.
 5. Mọi lỗi API phải theo error schema thống nhất.
 6. Tất cả task được triển khai trong backlog 12 tuần theo tối đa hai task mỗi ngày.
-7. Electron không được đưa vào acceptance criteria của MVP.
-8. Tính năng ngoài scope chỉ được thực hiện sau khi MVP đạt release criteria.
+7. Electron, GPS, map và delivery tracking nâng cao không được đưa vào acceptance criteria của MVP.
+8. Driver thin workflow (assignment, OTP/PIN, delivery failure) là acceptance criteria của MVP.
+9. Tính năng ngoài scope chỉ được thực hiện sau khi MVP đạt release criteria.
 
 ## 12. Definition of Done cho MVP
 
@@ -678,7 +840,7 @@ Các requirement sau được ghi nhận cho giai đoạn sau, không dùng đ�
 - Spring Cloud Gateway, Discovery và Config Server đầy đủ.
 - RabbitMQ/Kafka event-driven flow và Saga production-like.
 - Electron staff application.
-- Driver workflow, map, delivery tracking.
+- GPS tracking, map, route optimization, delivery fee động và fleet management production.
 - Chat/WebSocket và push notification.
 - Redis cache/rate limit/idempotency store.
 - MongoDB cho dữ liệu linh hoạt.
@@ -704,4 +866,4 @@ Việc chuyển một future requirement vào MVP phải được ghi nhận b�
 
 ## 15. Quyết định baseline
 
-> FreshFlow MVP 12 tuần là một sản phẩm web và Android chạy trên cùng Spring Boot/PostgreSQL backend. Tài liệu này là nguồn yêu cầu chi tiết để thiết kế database, API, UI, test và backlog. Electron, microservices đầy đủ và các tích hợp production thuộc roadmap mở rộng, không phải điều kiện hoàn thành MVP.
+> FreshFlow MVP 12 tuần là một sản phẩm React Web và hai Android client — Customer và Driver — chạy trên cùng Spring Boot/PostgreSQL backend. Tài liệu này là nguồn yêu cầu chi tiết để thiết kế database, API, UI, test và backlog. Electron, microservices đầy đủ và các tích hợp production thuộc roadmap mở rộng, không phải điều kiện hoàn thành MVP.

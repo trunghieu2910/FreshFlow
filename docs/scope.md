@@ -1,8 +1,8 @@
 # Project Scope — FreshFlow MVP
 
-**Phiên bản:** 1.0  
-**Ngày:** 17 tháng 8 năm 2026  
-**Trạng thái:** Baseline cho MVP 12 tuần  
+**Phiên bản:** 1.1  
+**Ngày:** 18 tháng 8 năm 2026  
+**Trạng thái:** Scope change đã chốt cho MVP 12 tuần — bổ sung Driver  
 **Tài liệu liên quan:** `requirements.md`, backlog FreshFlow MVP 12 tuần, ERD và API map
 
 ## 1. Giới thiệu dự án
@@ -13,7 +13,7 @@
 
 ### 1.2. Mục tiêu tổng quan
 
-FreshFlow là một nền tảng đặt món và vận hành cửa hàng quy mô nhỏ. Phiên bản MVP cho phép khách hàng sử dụng ứng dụng Android để đăng nhập, xem cửa hàng và sản phẩm, quản lý giỏ hàng, tạo đơn và theo dõi lịch sử đơn. Merchant sử dụng React Web để quản lý cửa hàng, danh mục, sản phẩm và theo dõi, cập nhật trạng thái đơn hàng. Backend Java Spring Boot cung cấp REST API, xác thực, phân quyền, xử lý nghiệp vụ, PostgreSQL và các cơ chế bảo vệ dữ liệu.
+FreshFlow là một nền tảng đặt món và vận hành cửa hàng quy mô nhỏ. Phiên bản MVP cho phép Customer sử dụng Android app để đăng nhập, xem cửa hàng và sản phẩm, quản lý giỏ hàng, tạo đơn và theo dõi lịch sử đơn. Merchant sử dụng React Web để quản lý cửa hàng, danh mục, sản phẩm, tiếp nhận order và dispatch order. Driver sử dụng Android app riêng để xem các order được Backend gán, nhập OTP/PIN khi giao món và báo giao thất bại. Backend Java Spring Boot cung cấp REST API, xác thực, phân quyền, xử lý nghiệp vụ, PostgreSQL và các cơ chế bảo vệ dữ liệu.
 
 Mục tiêu của MVP không phải xây một siêu ứng dụng giao đồ ăn. Mục tiêu là tạo một sản phẩm full-stack có thể chạy được, có thiết kế dữ liệu rõ ràng, có API dùng chung cho web và mobile, có kiểm thử, có Docker setup và đủ chất lượng để trình bày trong portfolio Backend Java, Full-stack hoặc Android Kotlin.
 
@@ -21,7 +21,7 @@ Mục tiêu của MVP không phải xây một siêu ứng dụng giao đồ ăn
 
 Các cửa hàng nhỏ thường quản lý menu và đơn hàng qua nhiều kênh, dẫn đến dữ liệu không đồng bộ, khó kiểm soát trạng thái đơn và dễ bán vượt số lượng tồn kho. Khách hàng cần một luồng đặt món thống nhất, còn merchant cần một giao diện đơn giản để quản lý sản phẩm và xử lý đơn.
 
-FreshFlow giải quyết vấn đề này bằng một backend trung tâm và hai client chuyên biệt: Android cho Customer và React Web cho Merchant. Mọi dữ liệu quan trọng, bao gồm giá, tổng tiền, quyền truy cập, trạng thái đơn và tồn kho, đều được kiểm tra ở backend.
+FreshFlow giải quyết vấn đề này bằng một backend trung tâm và ba client chuyên biệt: Android Customer, React Web Merchant và Android Driver. Mọi dữ liệu quan trọng, bao gồm giá, tổng tiền, quyền truy cập, trạng thái đơn, Driver assignment, OTP/PIN giao hàng và tồn kho, đều được kiểm tra ở backend.
 
 ## 2. Phạm vi công việc — In Scope
 
@@ -29,16 +29,17 @@ FreshFlow giải quyết vấn đề này bằng một backend trung tâm và ha
 
 | Khu vực | Phạm vi MVP |
 |---|---|
-| Identity | Đăng ký, đăng nhập, BCrypt, JWT access token và phân quyền CUSTOMER/MERCHANT |
+| Identity | Đăng ký, đăng nhập, BCrypt, JWT access token và phân quyền CUSTOMER/MERCHANT/DRIVER |
 | Store/Catalog | Store, category, product; CRUD có kiểm tra quyền sở hữu; active/inactive; search, filter, pagination và sorting |
 | Customer ordering | Xem catalog, xem chi tiết sản phẩm, giỏ hàng, checkout, xem chi tiết và lịch sử order |
-| Merchant operations | Quản lý sản phẩm, xem danh sách order của store và cập nhật trạng thái order theo state machine |
+| Merchant operations | Quản lý sản phẩm, xem order của store, tiếp nhận/dispatch order, theo dõi Driver assignment, xử lý `DELIVERY_FAILED` và `DISPUTED` theo state machine |
 | Inventory | Theo dõi stock, reserve/release stock, không cho stock âm và xử lý optimistic locking ở mức MVP |
-| Order | Order, OrderItem, price/name snapshot, server-side total, trạng thái và idempotency cho checkout |
-| Payment | Payment mock success/failure; chỉ lưu reference và trạng thái, không xử lý thẻ thật |
+| Order | Order, OrderItem, price/name snapshot, server-side total, Order State Machine, delivery assignment, OTP/PIN, delivery failure, dispute và idempotency cho checkout |
+| Payment | Payment mock success/failure/refund; chỉ lưu reference và trạng thái, không xử lý thẻ thật |
+| Delivery | Driver assignment theo Store, cờ `isAvailable`, giao món bằng Driver app, xác nhận OTP/PIN và báo giao thất bại |
 | Notification | Notification inbox tối giản trong database nếu kịp; không yêu cầu push notification thật |
 | Documentation | OpenAPI/Swagger, API examples, ERD, business rules, README và decision records |
-| Quality | Unit test, controller test, integration test với PostgreSQL/Testcontainers khi phù hợp và smoke test hai client |
+| Quality | Unit test, controller test, integration test với PostgreSQL/Testcontainers khi phù hợp và smoke test ba client: Customer, Merchant và Driver |
 | Delivery | Docker Compose cho backend và dependency; `.env.example`; hướng dẫn chạy local từ clean clone |
 
 ### 2.2. Nền tảng hỗ trợ
@@ -48,7 +49,7 @@ FreshFlow giải quyết vấn đề này bằng một backend trung tâm và ha
 | Backend | Java 17/21, Spring Boot, Spring Web, Spring Data JPA, Spring Security, Validation, Actuator |
 | Database | PostgreSQL; Flyway cho migration; Room/SQLite trên Android cho cart local |
 | Web client | React + TypeScript; React Router; typed API client; responsive merchant dashboard |
-| Mobile client | Kotlin Android; MVVM; Retrofit; Coroutines/Flow; Room; secure token storage phù hợp MVP |
+| Mobile clients | Kotlin Android; Customer app và Driver app; MVVM; Retrofit; Coroutines/Flow; Room khi cần; secure token storage phù hợp MVP |
 | Local infrastructure | Docker Compose; PostgreSQL; RabbitMQ hoặc event mock chỉ khi còn thời gian |
 | API | REST `/api/v1`, JSON, Bearer JWT, OpenAPI |
 
@@ -56,24 +57,26 @@ FreshFlow giải quyết vấn đề này bằng một backend trung tâm và ha
 
 | Actor | Kênh | Mục tiêu và quyền cốt lõi |
 |---|---|---|
-| CUSTOMER | Android Kotlin | Đăng ký/đăng nhập, xem catalog, quản lý cart, checkout, xem order của chính mình |
-| MERCHANT | React Web | Quản lý store/product của mình, xem order thuộc store và cập nhật trạng thái hợp lệ |
-| FRESHFLOW BACKEND | Spring Boot | Xác thực, phân quyền, validate, tính total, quản lý order/inventory và audit cơ bản |
-| PAYMENT MOCK | Backend integration | Trả kết quả payment success/failure giả lập để kiểm tra checkout flow |
+| CUSTOMER | Android Kotlin | Đăng ký/đăng nhập, xem catalog, quản lý cart, checkout, xem order của chính mình, xem OTP/PIN và mở dispute |
+| MERCHANT | React Web | Quản lý store/product của mình, xem order thuộc store, dispatch order, xem Driver assignment và xử lý delivery/dispute hợp lệ |
+| DRIVER | Android Kotlin | Đăng nhập, xem order được Backend gán, xem thông tin giao, nhập OTP/PIN và báo giao thất bại |
+| FRESHFLOW BACKEND | Spring Boot | Xác thực, phân quyền, validate, tính total, reserve/release inventory, gán Driver, quản lý order/payment/delivery/dispute và audit |
+| PAYMENT MOCK | Backend integration | Trả kết quả payment success/failure/refund giả lập để kiểm tra checkout và compensation flow |
 
-Các vai trò STAFF, DRIVER, ADMIN và SUPPORT được ghi nhận là đối tượng mở rộng nhưng không thuộc MVP 12 tuần.
+Các vai trò STAFF, ADMIN và SUPPORT được ghi nhận là đối tượng mở rộng nhưng không thuộc MVP 12 tuần. `DRIVER` đã được đưa vào MVP với phạm vi thin Driver Android app; GPS, bản đồ và định tuyến vẫn out of scope.
 
 ### 2.4. Tích hợp
 
 MVP bao gồm các tích hợp sau:
 
-1. React Web và Android gọi cùng REST API version `/api/v1`.
+1. React Web, Android Customer và Android Driver gọi cùng REST API version `/api/v1`.
 2. Spring Boot kết nối PostgreSQL bằng JPA/Flyway.
-3. Android dùng Retrofit để gọi API và Room để lưu cart local.
-4. Spring Security phát và kiểm tra JWT.
+3. Android Customer dùng Retrofit và Room để lưu cart local; Android Driver dùng Retrofit và local state tối thiểu.
+4. Spring Security phát và kiểm tra JWT cho CUSTOMER/MERCHANT/DRIVER.
 5. Swagger/OpenAPI mô tả API.
 6. Docker Compose khởi động backend dependency và PostgreSQL.
 7. Payment Mock có thể được triển khai dưới dạng module nội bộ; RabbitMQ là Should Have, không phải điều kiện bắt buộc để hoàn thành MVP.
+8. Backend tự gán order cho Driver `isAvailable = true`, ưu tiên Driver có ít order `SHIPPING` nhất; không dùng GPS hoặc bản đồ.
 
 ## 3. Ngoài phạm vi — Out of Scope
 
@@ -82,7 +85,7 @@ Các nội dung sau không được đưa vào MVP 12 tuần, trừ khi được
 | Nhóm | Ngoài phạm vi |
 |---|---|
 | Desktop | Electron Windows, IPC, auto-update, desktop offline queue, in phiếu |
-| Delivery | Driver app, phân công shipper, GPS tracking, delivery fee động |
+| Delivery | GPS tracking, Google Maps, route optimization, delivery fee động, real-time location và fleet management production |
 | Location | Google Maps hoặc bản đồ tương tác; chỉ lưu địa chỉ dạng text nếu cần cho order |
 | Communication | Chat/WebSocket, support chat, read receipt |
 | Notification | Push notification thật, email/SMS provider thật |
@@ -91,7 +94,7 @@ Các nội dung sau không được đưa vào MVP 12 tuần, trừ khi được
 | Cloud | Cloud production deployment, autoscaling, managed database production |
 | Analytics | Recommendation, AI, báo cáo doanh thu nâng cao, BI dashboard |
 | Business | Coupon phức tạp, loyalty, subscription, multi-warehouse, multi-store order |
-| Roles | Driver, Support, Admin portal và workflow quản trị nâng cao |
+| Roles | STAFF, Support, Admin portal và workflow quản trị nâng cao |
 
 Các tính năng ngoài phạm vi được lưu ở backlog V2, không được tự động thêm vào task MVP.
 
@@ -106,7 +109,10 @@ Các tính năng ngoài phạm vi được lưu ở backlog V2, không được 
 7. Ảnh sản phẩm có thể dùng URL hoặc placeholder; binary image storage không phải yêu cầu MVP.
 8. Môi trường demo có thể chạy local bằng Docker Compose; dữ liệu seed phục vụ học tập, không phải dữ liệu production.
 9. Tất cả thời gian hệ thống được lưu theo UTC; client chịu trách nhiệm hiển thị theo timezone phù hợp.
-10. Merchant test account và customer test account được tạo từ seed hoặc script local, không dùng dữ liệu cá nhân thật.
+10. Merchant test account, customer test account và driver test account được tạo từ seed hoặc script local, không dùng dữ liệu cá nhân thật.
+11. Một Store có thể có nhiều Driver; mỗi Order chỉ có tối đa một Driver tại một thời điểm.
+12. Backend assignment chỉ xét Driver `isAvailable = true`; không đặt giới hạn cứng số order cho Driver trong MVP và cân bằng theo số order đang `SHIPPING`.
+13. OTP/PIN là cơ chế xác nhận giao hàng tối giản; không yêu cầu GPS, bản đồ hoặc chữ ký điện tử.
 
 ## 5. Ràng buộc — Constraints
 
@@ -114,7 +120,7 @@ Các tính năng ngoài phạm vi được lưu ở backlog V2, không được 
 |---|---|
 | Thời gian | Hoàn thành MVP trong 12 tuần, theo backlog tối đa 2 task mỗi ngày |
 | Công nghệ backend | Java Spring Boot và PostgreSQL là bắt buộc |
-| Client | React Web và Android Kotlin là hai client MVP; Electron bị loại khỏi MVP |
+| Client | React Web Merchant, Android Customer và Android Driver là ba client MVP; Electron bị loại khỏi MVP |
 | Database | Database track phải được thực hiện trước các phần code phụ thuộc; Flyway là nguồn schema versioning |
 | API | Client không được truy cập database trực tiếp; mọi nghiệp vụ đi qua REST API |
 | Security | Password không lưu plaintext; quyền phải được kiểm tra ở backend |
@@ -144,7 +150,16 @@ FreshFlow MVP được coi là đạt khi thỏa tất cả nhóm tiêu chí sau
 - Merchant xem được order thuộc store của mình.
 - Merchant cập nhật được order theo state transition hợp lệ.
 
-### 6.3. Backend and data
+### 6.3. Driver flow
+
+- Driver đăng nhập trên Android bằng role `DRIVER`.
+- Backend tự gán order cho một Driver available thuộc Store tương ứng.
+- Driver xem được danh sách order được gán và chi tiết delivery.
+- Driver nhập OTP/PIN do Customer nhìn thấy để xác nhận giao thành công.
+- Driver có thể báo `DELIVERY_FAILED` với lý do hợp lệ.
+- Customer có thể mở `DISPUTED` trong lúc `SHIPPING` hoặc sau `COMPLETED`; Merchant xử lý `DISPUTED` sang `COMPLETED` hoặc `CANCELLED`.
+
+### 6.4. Backend and data
 
 - API `/api/v1` có OpenAPI và error schema thống nhất.
 - PostgreSQL schema được tạo bằng Flyway và có seed data có thể lặp an toàn.
@@ -153,7 +168,7 @@ FreshFlow MVP được coi là đạt khi thỏa tất cả nhóm tiêu chí sau
 - Checkout lặp cùng Idempotency-Key không tạo duplicate order.
 - JWT/RBAC trả đúng 401/403 cho các tình huống kiểm thử.
 
-### 6.4. Quality and delivery
+### 6.5. Quality and delivery
 
 - Unit test và controller/integration test cho các nghiệp vụ quan trọng chạy pass.
 - Backend và PostgreSQL khởi động được từ Docker Compose.
@@ -169,8 +184,8 @@ FreshFlow MVP được coi là đạt khi thỏa tất cả nhóm tiêu chí sau
 | M2 — Catalog | Catalog API có migration, validation, pagination và test |
 | M3 — Multi-client | React catalog và Android catalog gọi backend thật |
 | M4 — Secure ordering | JWT/RBAC, cart, order, checkout cơ bản |
-| M5 — Consistency | Inventory reservation, locking, idempotency và failure handling |
-| M6 — Portfolio v1.0 | Test, Docker, README, demo, architecture và CV-ready release |
+| M5 — Delivery and Consistency | Inventory reservation, locking, idempotency, payment compensation, Driver assignment và delivery state machine |
+| M6 — Portfolio v1.0 | Test ba client, Docker, README, demo end-to-end, architecture và CV-ready release |
 
 ## 8. Quy trình thay đổi phạm vi
 
@@ -184,4 +199,4 @@ FreshFlow MVP được đánh dấu `Released` khi tất cả acceptance criteri
 
 ## 10. Quyết định phạm vi quan trọng
 
-> **FreshFlow MVP 12 tuần ưu tiên một sản phẩm web và mobile chạy thật trên cùng Spring Boot/PostgreSQL backend. Microservices đầy đủ, Electron và các tích hợp production là phần mở rộng sau MVP, không phải điều kiện để hoàn thành bản đầu tiên.**
+> **FreshFlow MVP 12 tuần ưu tiên một sản phẩm React Web và hai Android client chạy thật trên cùng Spring Boot/PostgreSQL backend. Driver Android chỉ bao gồm assignment, OTP/PIN và delivery failure; GPS, bản đồ, microservices đầy đủ, Electron và các tích hợp production là phần mở rộng sau MVP.**
