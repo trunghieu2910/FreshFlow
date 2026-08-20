@@ -1,5 +1,6 @@
-package com.freshflow.api.domain;
+package com.freshflow.api.order.domain.domain;
 
+import com.freshflow.api.order.domain.AddressSnapshot;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 

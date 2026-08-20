@@ -1,4 +1,4 @@
-package com.freshflow.api.domain;
+package com.freshflow.api.common.domain;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

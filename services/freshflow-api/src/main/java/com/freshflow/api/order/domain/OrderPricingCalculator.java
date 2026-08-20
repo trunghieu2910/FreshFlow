@@ -1,4 +1,6 @@
-package com.freshflow.api.domain;
+package com.freshflow.api.order.domain;
+
+import com.freshflow.api.common.domain.Money;
 
 import java.math.BigDecimal;
 import java.util.List;

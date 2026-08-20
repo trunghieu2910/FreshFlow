@@ -1,4 +1,4 @@
-package com.freshflow.api.domain;
+package com.freshflow.api.common.domain;
 
 import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;

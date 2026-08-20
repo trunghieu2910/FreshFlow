@@ -1,4 +1,4 @@
-package com.freshflow.api.domain;
+package com.freshflow.api.order.domain;
 
 import java.util.Objects;
 //AddressSnapshot stores the delivery address copied into an order at checkout. It is a snapshot, not a live reference to the customer's editable address book.
