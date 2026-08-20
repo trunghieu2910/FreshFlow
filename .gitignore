@@ -1,3 +1,6 @@
-node_modules/
-dist/
+# Local environment files
 .env
+!.env.example
+
+# IntelliJ IDEA project files
+.idea/
