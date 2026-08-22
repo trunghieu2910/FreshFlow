@@ -83,3 +83,29 @@ Create or verify the `Must`, `Should` and `Stretch` labels in the `trunghieu2910
 #### Next action
 
 <!-- State one or more concrete next steps. -->
+## Entry — FF-01-05-2 verification evidence
+
+### Goal
+
+Verify the GitHub issue workflow through a real temporary issue and priority labels.
+
+### Completed
+
+- Created the `Must`, `Should` and `Stretch` labels on GitHub.
+- Created issue [#1 — Verify FreshFlow issue workflow](https://github.com/trunghieu2910/FreshFlow/issues/1 ) from the FreshFlow task template.
+- Confirmed that the issue contains task summary, scope, acceptance criteria, verification plan and Definition of Done.
+- Confirmed that issue #1 has the `Must` label.
+
+### Evidence
+
+- Issue: https://github.com/trunghieu2910/FreshFlow/issues/1
+- Workflow commit on main: `90007e4`
+- GitHub repository: https://github.com/trunghieu2910/FreshFlow
+
+### Blockers
+
+None.
+
+### Next action
+
+Create a draft pull request from `chore/verify-github-workflow` to verify automatic loading of `.github/PULL_REQUEST_TEMPLATE.md`.
