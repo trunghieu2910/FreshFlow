@@ -1,9 +1,9 @@
 # FreshFlow MVP — Entity Relationship Design (ERD)
 
-> **Task:** `FF-01-02-2`  
-> **Status:** Approved candidate design  
-> **Scope:** FreshFlow MVP with Customer Android, Merchant React Web and Driver Android  
-> **Database:** PostgreSQL  
+> **Task:** `FF-01-05-1`
+> **Status:** Approved
+> **Scope:** FreshFlow MVP with Customer Android, Merchant React Web and Driver Android
+> **Database:** PostgreSQL
 > **Author:** Manus AI
 
 ## 1. Purpose
