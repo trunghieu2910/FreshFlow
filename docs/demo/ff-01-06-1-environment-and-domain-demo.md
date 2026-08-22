@@ -172,10 +172,10 @@ The following sequence is the reproducible runbook. Run the first group from the
 ```bash
 git clone https://github.com/trunghieu2910/FreshFlow.git
 cd FreshFlow
-cp infrastructure/.env.example .env
+cp infrastructure/.env.example infrastructure/.env
 ```
 
-Open `.env` and verify the PostgreSQL values match the current local Spring Boot configuration. Add the RabbitMQ values if they are not already present:
+Open `infrastructure/.env` and verify the PostgreSQL values match the current local Spring Boot configuration. Add the RabbitMQ values if they are not already present:
 
 ```dotenv
 POSTGRES_DB=freshflow
@@ -193,8 +193,8 @@ RABBITMQ_MANAGEMENT_PORT=15672
 Start the infrastructure:
 
 ```bash
-docker compose -f infrastructure/docker-compose.yml up -d
-docker compose -f infrastructure/docker-compose.yml ps
+docker compose --env-file infrastructure/.env -f infrastructure/docker-compose.yml up -d
+docker compose --env-file infrastructure/.env -f infrastructure/docker-compose.yml ps
 ```
 
 Verify both containers:
@@ -257,12 +257,12 @@ Compose loads `.env` from the directory where the command is run, not from `.env
 
 ### 10.2. RabbitMQ has empty ports or credentials
 
-Run `docker compose -f infrastructure/docker-compose.yml config`. If `published` is empty or a `RABBITMQ_* variable is not set` warning appears, fix `.env` before running `up`. Do not rely on a container that was created with blank values; recreate it only after the local variables are correct.
+Run `docker compose --env-file infrastructure/.env -f infrastructure/docker-compose.yml config`. If `published` is empty or a `RABBITMQ_* variable is not set` warning appears, fix `infrastructure/.env` before running `up`. Do not rely on a container that was created with blank values; recreate it only after the local variables are correct.
 
 ```bash
-docker compose -f infrastructure/docker-compose.yml down
-docker compose -f infrastructure/docker-compose.yml up -d
-docker compose -f infrastructure/docker-compose.yml ps
+docker compose --env-file infrastructure/.env -f infrastructure/docker-compose.yml down
+docker compose --env-file infrastructure/.env -f infrastructure/docker-compose.yml up -d
+docker compose --env-file infrastructure/.env -f infrastructure/docker-compose.yml ps
 ```
 
 The `down` command does not remove named volumes unless `-v` is added. Do not use `-v` for routine troubleshooting because it deletes local database/broker data.
@@ -276,7 +276,7 @@ Inspect the owning process or container before changing ports. Prefer stopping t
 Confirm PostgreSQL is healthy, the database is `freshflow`, the username is `freshflow`, and the password in the API configuration matches the password used when the PostgreSQL volume was initialized. Existing named volumes retain their original credentials; changing `.env` alone does not change credentials inside an already initialized PostgreSQL volume.
 
 ```bash
-docker compose -f infrastructure/docker-compose.yml ps
+docker compose --env-file infrastructure/.env -f infrastructure/docker-compose.yml ps
 curl -i --max-time 10 http://localhost:8080/actuator/health
 ```
 
