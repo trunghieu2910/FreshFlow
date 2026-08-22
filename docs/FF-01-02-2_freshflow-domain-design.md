@@ -22,7 +22,7 @@ services/freshow-api/src/main/java/com/freshflow/api/domain/
 The project currently uses the package:
 
 ```java
-com.freshflow.api.domain
+com.freshflow.api.order.domain.domain
 ```
 
 The project folder is still named `freshow-api`, but the Java package `com.freshflow.api` is correct and should remain consistent for this task.

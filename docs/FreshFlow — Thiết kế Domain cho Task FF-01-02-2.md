@@ -20,7 +20,7 @@ D:\FreshFlow\services\freshow-api\src\main\java\com\freshflow\api\domain\
 Package Java:
 
 ```java
-com.freshflow.api.domain
+com.freshflow.api.order.domain.domain
 ```
 
 Các file test sẽ được đặt tại:

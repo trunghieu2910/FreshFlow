@@ -9,5 +9,4 @@ public class FreshflowApiApplication {
   public static void main(String[] args) {
     SpringApplication.run(FreshflowApiApplication.class, args);
   }
-
 }
