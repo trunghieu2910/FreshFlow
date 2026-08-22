@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: FreshFlow documentation
+    url: https://github.com/trunghieu2910/FreshFlow/tree/main/docs
+    about: Read the project scope, requirements, architecture and development conventions before opening an issue.
+  - name: FreshFlow contributing guide
+    url: https://github.com/trunghieu2910/FreshFlow/blob/main/CONTRIBUTING.md
+    about: Check the development setup, testing rules, API convention and commit convention.
