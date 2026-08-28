@@ -85,6 +85,7 @@ public class CatalogDtoMapper {
         variant.getInventoryMode(),
         variant.getAutoAcceptOverride(),
         variant.getMaxQuantityPerOrder(),
+        variant.getDailyCapacityDefault(),
         available,
         active,
         status,

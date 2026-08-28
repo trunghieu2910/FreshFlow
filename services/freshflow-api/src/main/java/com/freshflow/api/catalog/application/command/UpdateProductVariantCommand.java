@@ -1,10 +1,9 @@
-package com.freshflow.api.catalog.api.dto;
+package com.freshflow.api.catalog.application.command;
 
 import com.freshflow.api.catalog.domain.InventoryMode;
 import java.math.BigDecimal;
 
-public record ProductVariantDto(
-    Long id,
+public record UpdateProductVariantCommand(
     String name,
     String size,
     BigDecimal price,
@@ -12,7 +11,4 @@ public record ProductVariantDto(
     Boolean autoAcceptOverride,
     Integer maxQuantityPerOrder,
     Integer dailyCapacityDefault,
-    boolean available,
-    boolean active,
-    AvailabilityStatus availabilityStatus,
-    CapacityDto capacity) {}
+    Boolean available) {}

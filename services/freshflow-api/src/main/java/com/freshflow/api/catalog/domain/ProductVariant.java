@@ -1,6 +1,16 @@
 package com.freshflow.api.catalog.domain;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
@@ -39,6 +49,9 @@ public class ProductVariant {
 
   @Column(name = "max_quantity_per_order")
   private Integer maxQuantityPerOrder;
+
+  @Column(name = "daily_capacity_default")
+  private Integer dailyCapacityDefault;
 
   @NotNull @ColumnDefault("true")
   @Column(name = "is_available", nullable = false)
@@ -94,6 +107,14 @@ public class ProductVariant {
     this.price = price;
   }
 
+  public InventoryMode getInventoryMode() {
+    return inventoryMode;
+  }
+
+  public void setInventoryMode(InventoryMode inventoryMode) {
+    this.inventoryMode = inventoryMode;
+  }
+
   public Boolean getAutoAcceptOverride() {
     return autoAcceptOverride;
   }
@@ -110,20 +131,20 @@ public class ProductVariant {
     this.maxQuantityPerOrder = maxQuantityPerOrder;
   }
 
+  public Integer getDailyCapacityDefault() {
+    return dailyCapacityDefault;
+  }
+
+  public void setDailyCapacityDefault(Integer dailyCapacityDefault) {
+    this.dailyCapacityDefault = dailyCapacityDefault;
+  }
+
   public Boolean getIsAvailable() {
     return isAvailable;
   }
 
   public void setIsAvailable(Boolean isAvailable) {
     this.isAvailable = isAvailable;
-  }
-
-  public InventoryMode getInventoryMode() {
-    return inventoryMode;
-  }
-
-  public void setInventoryMode(InventoryMode inventoryMode) {
-    this.inventoryMode = inventoryMode;
   }
 
   public Boolean getIsActive() {
