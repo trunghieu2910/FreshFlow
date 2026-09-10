@@ -20,7 +20,7 @@ class CatalogSeedMigrationTest {
 
   @Test
   void v2_applies_expected_catalog_seed() {
-    assertEquals(2, migrationVersion());
+    assertEquals(3, migrationVersion());
     assertEquals(1, count("users", "email = 'demo.owner@freshflow.local'"));
     assertEquals(1, count("stores", "name = 'FreshFlow Demo Kitchen'"));
     assertEquals(2, count("categories", "name IN ('Beverages', 'Bakery')"));

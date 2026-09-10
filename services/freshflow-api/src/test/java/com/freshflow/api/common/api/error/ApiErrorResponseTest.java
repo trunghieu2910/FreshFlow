@@ -29,7 +29,7 @@ class ApiErrorResponseTest {
     String jsonString = objectMapper.writeValueAsString(response);
     JsonNode json = objectMapper.readTree(jsonString);
 
-    assertEquals(4, json.size());
+    assertEquals(5, json.size());
     assertEquals("ORDER_NOT_FOUND", json.get("code").asText());
     assertEquals("Order was not found", json.get("message").asText());
     assertEquals("/api/orders/123", json.get("path").asText());
