@@ -154,4 +154,127 @@ class ProductControllerIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.active").value(false));
   }
+
+  @Test
+  void listsProductsWithPaginationAndSorting() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v1/stores/{storeId}/products", storeId)
+                .param("page", "0")
+                .param("size", "1")
+                .param("sort", "name,asc"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(1))
+        .andExpect(jsonPath("$.totalElements").value(org.hamcrest.Matchers.greaterThanOrEqualTo(2)))
+        .andExpect(jsonPath("$.totalPages").value(org.hamcrest.Matchers.greaterThanOrEqualTo(2)))
+        .andExpect(jsonPath("$.number").value(0))
+        .andExpect(jsonPath("$.first").value(true));
+  }
+
+  @Test
+  void searchesProductsByKeyword() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/stores/{storeId}/products", storeId).param("search", "Croissant"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(1))
+        .andExpect(jsonPath("$.content[0].name").value("Butter Croissant"));
+  }
+
+  @Test
+  void filtersProductsByVariantSize_M_and_STANDARD() throws Exception {
+    // Sized M filter
+    mockMvc
+        .perform(get("/api/v1/stores/{storeId}/products", storeId).param("size", "M"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(1))
+        .andExpect(jsonPath("$.content[0].name").value("Classic Milk Tea"));
+
+    // STANDARD (unsized) filter
+    mockMvc
+        .perform(get("/api/v1/stores/{storeId}/products", storeId).param("size", "STANDARD"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(1))
+        .andExpect(jsonPath("$.content[0].name").value("Butter Croissant"));
+  }
+
+  @Test
+  void doesNotLeakInactiveProductsOrInactiveCategories() throws Exception {
+    // Soft-deactivate Classic Milk Tea
+    jdbcTemplate.update("UPDATE products SET is_active = false WHERE id = ?", productId);
+
+    mockMvc
+        .perform(get("/api/v1/stores/{storeId}/products", storeId))
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath("$.content[*].name")
+                .value(
+                    org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem("Classic Milk Tea"))));
+
+    // Reactivate product, but deactivate its StoreCategory
+    jdbcTemplate.update("UPDATE products SET is_active = true WHERE id = ?", productId);
+    Long storeCatId =
+        jdbcTemplate.queryForObject(
+            "SELECT store_category_id FROM products WHERE id = ?", Long.class, productId);
+    jdbcTemplate.update("UPDATE store_categories SET is_active = false WHERE id = ?", storeCatId);
+
+    mockMvc
+        .perform(get("/api/v1/stores/{storeId}/products", storeId))
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath("$.content[*].name")
+                .value(
+                    org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem("Classic Milk Tea"))));
+  }
+
+  @Test
+  void returnsCapacityExhaustedWhenDailyCapacityIsFull() throws Exception {
+    // Get beverage location or create one
+    var locations =
+        jdbcTemplate.queryForList(
+            "SELECT id FROM inventory_locations WHERE store_id = ? LIMIT 1", Long.class, storeId);
+    Long locationId;
+    if (locations.isEmpty()) {
+      jdbcTemplate.update(
+          "INSERT INTO inventory_locations (store_id, name, type, is_default, is_active, created_at, updated_at) "
+              + "VALUES (?, 'Main Kitchen', 'MAIN_KITCHEN', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+          storeId);
+      locationId =
+          jdbcTemplate.queryForObject(
+              "SELECT id FROM inventory_locations WHERE store_id = ? LIMIT 1", Long.class, storeId);
+    } else {
+      locationId = locations.get(0);
+    }
+
+    Long variantId =
+        jdbcTemplate.queryForObject(
+            "SELECT id FROM product_variants WHERE product_id = ? AND name = 'M' LIMIT 1",
+            Long.class,
+            productId);
+
+    // Insert capacity record for today with capacity_limit = 10 and reserved_quantity = 10
+    // (remaining = 0)
+    jdbcTemplate.update(
+        "INSERT INTO inventory_capacity_records (variant_id, location_id, capacity_date, capacity_limit, reserved_quantity, created_at, updated_at) "
+            + "VALUES (?, ?, CURRENT_DATE, 10, 10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) "
+            + "ON CONFLICT (variant_id, location_id, capacity_date) DO UPDATE "
+            + "SET capacity_limit = 10, reserved_quantity = 10",
+        variantId,
+        locationId);
+
+    mockMvc
+        .perform(get("/api/v1/stores/{storeId}/products", storeId))
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath(
+                    "$.content[?(@.name == 'Classic Milk Tea')].variants[?(@.name == 'M')].available")
+                .value(false))
+        .andExpect(
+            jsonPath(
+                    "$.content[?(@.name == 'Classic Milk Tea')].variants[?(@.name == 'M')].availabilityStatus")
+                .value("CAPACITY_EXHAUSTED"))
+        .andExpect(
+            jsonPath(
+                    "$.content[?(@.name == 'Classic Milk Tea')].variants[?(@.name == 'M')].capacity.remaining")
+                .value(0));
+  }
 }

@@ -1,5 +1,7 @@
 package com.freshflow.api.catalog.application;
 
+import com.freshflow.api.catalog.api.dto.ProductCatalogDto;
+import com.freshflow.api.catalog.api.mapper.CatalogDtoMapper;
 import com.freshflow.api.catalog.application.command.CreateCategoryCommand;
 import com.freshflow.api.catalog.application.command.CreateProductCommand;
 import com.freshflow.api.catalog.application.command.CreateStoreCommand;
@@ -9,21 +11,30 @@ import com.freshflow.api.catalog.application.command.UpdateStoreCommand;
 import com.freshflow.api.catalog.application.exception.CatalogErrorCode;
 import com.freshflow.api.catalog.application.exception.CatalogNotFoundException;
 import com.freshflow.api.catalog.application.exception.CatalogRuleViolationException;
+import com.freshflow.api.catalog.application.query.ProductFilterCriteria;
+import com.freshflow.api.catalog.application.readmodel.CapacitySnapshot;
 import com.freshflow.api.catalog.domain.Category;
 import com.freshflow.api.catalog.domain.Product;
+import com.freshflow.api.catalog.domain.ProductVariant;
 import com.freshflow.api.catalog.domain.Store;
 import com.freshflow.api.catalog.domain.StoreCategory;
 import com.freshflow.api.catalog.domain.StoreStatus;
 import com.freshflow.api.catalog.domain.User;
 import com.freshflow.api.catalog.infrastructure.persistence.CategoryRepository;
 import com.freshflow.api.catalog.infrastructure.persistence.ProductRepository;
+import com.freshflow.api.catalog.infrastructure.persistence.ProductSpecifications;
 import com.freshflow.api.catalog.infrastructure.persistence.StoreCategoryRepository;
 import com.freshflow.api.catalog.infrastructure.persistence.StoreRepository;
 import com.freshflow.api.catalog.infrastructure.persistence.UserRepository;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,18 +46,24 @@ public class CatalogService {
   private final CategoryRepository categoryRepository;
   private final StoreCategoryRepository storeCategoryRepository;
   private final ProductRepository productRepository;
+  private final CatalogCapacityService capacityService;
+  private final CatalogDtoMapper dtoMapper;
 
   public CatalogService(
       UserRepository userRepository,
       StoreRepository storeRepository,
       CategoryRepository categoryRepository,
       StoreCategoryRepository storeCategoryRepository,
-      ProductRepository productRepository) {
+      ProductRepository productRepository,
+      CatalogCapacityService capacityService,
+      CatalogDtoMapper dtoMapper) {
     this.userRepository = userRepository;
     this.storeRepository = storeRepository;
     this.categoryRepository = categoryRepository;
     this.storeCategoryRepository = storeCategoryRepository;
     this.productRepository = productRepository;
+    this.capacityService = capacityService;
+    this.dtoMapper = dtoMapper;
   }
 
   @Transactional
@@ -181,6 +198,24 @@ public class CatalogService {
   public List<Product> listProductsByStore(Long storeId) {
     getStore(storeId);
     return productRepository.findAllByStore_IdOrderByNameAsc(storeId);
+  }
+
+  public Page<ProductCatalogDto> listProductsByStore(
+      Long storeId, ProductFilterCriteria criteria, Pageable pageable) {
+    getStore(storeId);
+    Specification<Product> spec = ProductSpecifications.withFilter(storeId, criteria);
+    Page<Product> page = productRepository.findAll(spec, pageable);
+
+    List<ProductVariant> allVariants =
+        page.getContent().stream()
+            .filter(p -> p.getVariants() != null)
+            .flatMap(p -> p.getVariants().stream())
+            .toList();
+
+    Map<Long, CapacitySnapshot> capacityMap =
+        capacityService.getCapacitySnapshots(allVariants, LocalDate.now());
+
+    return page.map(product -> dtoMapper.toProductDto(product, capacityMap));
   }
 
   public Product getProduct(Long productId) {

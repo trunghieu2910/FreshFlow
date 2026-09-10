@@ -4,17 +4,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.freshflow.api.catalog.api.dto.ProductCatalogDto;
+import com.freshflow.api.catalog.api.mapper.CatalogDtoMapper;
 import com.freshflow.api.catalog.application.command.CreateCategoryCommand;
 import com.freshflow.api.catalog.application.command.CreateProductCommand;
 import com.freshflow.api.catalog.application.command.CreateStoreCommand;
 import com.freshflow.api.catalog.application.exception.CatalogErrorCode;
 import com.freshflow.api.catalog.application.exception.CatalogNotFoundException;
 import com.freshflow.api.catalog.application.exception.CatalogRuleViolationException;
+import com.freshflow.api.catalog.application.query.ProductFilterCriteria;
+import com.freshflow.api.catalog.application.readmodel.CapacitySnapshot;
 import com.freshflow.api.catalog.domain.Category;
 import com.freshflow.api.catalog.domain.Product;
+import com.freshflow.api.catalog.domain.ProductVariant;
 import com.freshflow.api.catalog.domain.Store;
 import com.freshflow.api.catalog.domain.StoreCategory;
 import com.freshflow.api.catalog.domain.StoreStatus;
@@ -24,12 +30,20 @@ import com.freshflow.api.catalog.infrastructure.persistence.ProductRepository;
 import com.freshflow.api.catalog.infrastructure.persistence.StoreCategoryRepository;
 import com.freshflow.api.catalog.infrastructure.persistence.StoreRepository;
 import com.freshflow.api.catalog.infrastructure.persistence.UserRepository;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 @ExtendWith(MockitoExtension.class)
 class CatalogServiceTest {
@@ -38,6 +52,8 @@ class CatalogServiceTest {
   @Mock private CategoryRepository categoryRepository;
   @Mock private StoreCategoryRepository storeCategoryRepository;
   @Mock private ProductRepository productRepository;
+  @Mock private CatalogCapacityService capacityService;
+  @Mock private CatalogDtoMapper dtoMapper;
 
   @InjectMocks private CatalogService catalogService;
 
@@ -160,5 +176,40 @@ class CatalogServiceTest {
 
     assertFalse(product.getIsActive());
     verify(productRepository).save(product);
+  }
+
+  @Test
+  void listProductsByStore_paginated_returnsMappedProductDtosWithCapacity() {
+    Store store = new Store();
+    store.setId(1L);
+    when(storeRepository.findById(1L)).thenReturn(Optional.of(store));
+
+    Product product = new Product();
+    product.setId(10L);
+    product.setName("Tea");
+    ProductVariant variant = new ProductVariant();
+    variant.setId(100L);
+    product.setVariants(List.of(variant));
+
+    Page<Product> productPage = new PageImpl<>(List.of(product));
+    when(productRepository.findAll(any(Specification.class), any(Pageable.class)))
+        .thenReturn(productPage);
+
+    CapacitySnapshot snapshot = new CapacitySnapshot(LocalDate.now(), 10, 2);
+    when(capacityService.getCapacitySnapshots(any(), any(LocalDate.class)))
+        .thenReturn(Map.of(100L, snapshot));
+
+    ProductCatalogDto expectedDto = new ProductCatalogDto(10L, "Tea", null, null, true, List.of());
+    when(dtoMapper.toProductDto(any(Product.class), anyMap())).thenReturn(expectedDto);
+
+    Page<ProductCatalogDto> result =
+        catalogService.listProductsByStore(
+            1L,
+            ProductFilterCriteria.publicCatalog(null, null, null, null, null),
+            PageRequest.of(0, 10));
+
+    assertEquals(1, result.getContent().size());
+    assertEquals(expectedDto, result.getContent().get(0));
+    verify(productRepository).findAll(any(Specification.class), any(Pageable.class));
   }
 }

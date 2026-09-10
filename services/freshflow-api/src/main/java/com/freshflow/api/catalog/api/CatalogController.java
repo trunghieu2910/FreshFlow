@@ -11,10 +11,17 @@ import com.freshflow.api.catalog.api.request.UpdateProductVariantRequest;
 import com.freshflow.api.catalog.application.CatalogService;
 import com.freshflow.api.catalog.application.CatalogVariantService;
 import com.freshflow.api.catalog.application.exception.CatalogAccessService;
+import com.freshflow.api.catalog.application.query.ProductFilterCriteria;
+import com.freshflow.api.catalog.domain.InventoryMode;
 import com.freshflow.api.catalog.domain.Product;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +31,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -39,6 +47,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
  */
 @RestController
 @RequestMapping("/api/v1")
+@Tag(name = "Catalog", description = "Endpoints for managing product catalog and variants")
 public class CatalogController {
 
   private final CatalogService catalogService;
@@ -63,19 +72,43 @@ public class CatalogController {
   // -------------------------------------------------------------------------
   // Public -- store list / product catalog
   // -------------------------------------------------------------------------
-
+  // get list of all stores
   @GetMapping("/stores")
   public ResponseEntity<List<?>> listStores() {
     return ResponseEntity.ok(catalogService.listStores());
   }
 
+  // get list of all Prodducts in menu of store
   @GetMapping("/stores/{storeId}/products")
-  public ResponseEntity<List<ProductCatalogDto>> listProducts(@PathVariable Long storeId) {
-    List<Product> products = catalogService.listProductsByStore(storeId);
-    List<ProductCatalogDto> dtos = products.stream().map(dtoMapper::toProductDto).toList();
-    return ResponseEntity.ok(dtos);
+  public ResponseEntity<Page<ProductCatalogDto>> listProducts(
+      @PathVariable Long storeId,
+      @RequestParam(required = false) String search,
+      @RequestParam(required = false) Long storeCategoryId,
+      @RequestParam(required = false) String size,
+      @RequestParam(required = false) String variantSize,
+      @RequestParam(required = false) InventoryMode inventoryMode,
+      @RequestParam(required = false) Boolean availableOnly,
+      @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC)
+          Pageable pageable) {
+    String effectiveSize = resolveSizeFilter(size, variantSize);
+    ProductFilterCriteria criteria =
+        ProductFilterCriteria.publicCatalog(
+            search, storeCategoryId, effectiveSize, inventoryMode, availableOnly);
+    Page<ProductCatalogDto> page = catalogService.listProductsByStore(storeId, criteria, pageable);
+    return ResponseEntity.ok(page);
   }
 
+  private static String resolveSizeFilter(String sizeParam, String variantSizeParam) {
+    if (variantSizeParam != null && !variantSizeParam.isBlank()) {
+      return variantSizeParam.trim();
+    }
+    if (sizeParam != null && !sizeParam.isBlank() && !sizeParam.trim().matches("\\d+")) {
+      return sizeParam.trim();
+    }
+    return null;
+  }
+
+  // get Product details
   @GetMapping("/stores/{storeId}/products/{productId}")
   public ResponseEntity<ProductCatalogDto> getProduct(
       @PathVariable Long storeId, @PathVariable Long productId) {
