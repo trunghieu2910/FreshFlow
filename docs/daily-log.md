@@ -109,3 +109,97 @@ None.
 ### Next action
 
 Create a draft pull request from `chore/verify-github-workflow` to verify automatic loading of `.github/PULL_REQUEST_TEMPLATE.md`.
+
+## Entry — FF-02-04-1 (kèm DB-03-A)
+
+**Date:** `2026-09-10`
+**Task:** `FF-02-04-1 — Thêm pagination, sorting, search và filter availability/variant cho catalog (kèm DB-03-A)`
+**Priority:** `Must`
+**Area:** `Backend` / `REST` / `Database`
+
+### Goal
+
+Thêm pagination, sorting, search và filter availability/variant cho catalog; đảm bảo chỉ catalog active được query và mua; tính toán công suất ngày (daily capacity) và trả về `CAPACITY_EXHAUSTED` khi hết suất.
+
+### Completed
+
+- Tạo tài liệu SQL tham chiếu chuẩn tại `docs/database/03-catalog-queries.sql` (DB-03-A) với đầy đủ truy vấn active join, search, size filter (M/L/STANDARD), inventory mode, daily capacity và pagination.
+- Tạo DTO `ProductFilterCriteria` và lớp `ProductSpecifications` sử dụng Spring Data JPA Specification.
+- Nâng cấp `ProductRepository` kế thừa `JpaSpecificationExecutor<Product>`.
+- Xây dựng `CatalogCapacityService` truy vấn công suất ngày từ `inventory_capacity_records` với fallback sang `dailyCapacityDefault`.
+- Nâng cấp `CatalogService.listProductsByStore` trả về `Page<ProductCatalogDto>` có tích hợp snapshot công suất và trạng thái `CAPACITY_EXHAUSTED`.
+- Nâng cấp REST Controller `GET /api/v1/stores/{storeId}/products` với các query param (`search`, `storeCategoryId`, `size`, `variantSize`, `inventoryMode`, `availableOnly`, `Pageable`).
+- Viết 7 integration test trong `ProductSpecificationIntegrationTest`, 3 test trong `CatalogCapacityServiceIntegrationTest`, và bổ sung 5 integration test trong `ProductControllerIntegrationTest`.
+
+### Evidence
+
+```text
+[INFO] Running com.freshflow.api.catalog.infrastructure.persistence.ProductSpecificationIntegrationTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.freshflow.api.catalog.application.CatalogCapacityServiceIntegrationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.freshflow.api.catalog.api.controller.ProductControllerIntegrationTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Results:
+[INFO] Tests run: 114, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+### Blockers
+
+None.
+
+### Next action
+
+Hoàn thành task FF-02-04-2 và DB-03-B.
+
+## Entry — FF-02-04-2 (kèm DB-03-B)
+
+**Date:** `2026-09-11`
+**Task:** `FF-02-04-2 — Tích hợp OpenAPI và Postman collection (kèm DB-03-B)`
+**Priority:** `Must`
+**Area:** `Docs` / `OpenAPI` / `Postman` / `Database`
+
+### Goal
+
+Tích hợp tài liệu OpenAPI 3.0, Swagger UI trực quan, tạo bộ Postman collection hoàn chỉnh (`postman/catalog.json`) với đầy đủ happy và error cases; tạo migration Flyway V4 bổ sung B-tree indexes (`DB-03-B`) tối ưu hóa truy vấn phân trang, tìm kiếm và lọc danh mục sản phẩm.
+
+### Completed
+
+- **DB-03-B (B-Tree Index Migration)**: Tạo migration Flyway `V4__add_catalog_performance_indexes.sql` bổ sung các B-tree index:
+  - `idx_products_store_active_name`: tối ưu duyệt catalog theo cửa hàng và sắp xếp tên.
+  - `idx_products_store_active_created_at`: tối ưu sắp xếp theo ngày tạo.
+  - `idx_products_store_category_active`: tối ưu lọc theo danh mục sản phẩm.
+  - `idx_store_categories_store_active`: tối ưu join danh mục active.
+  - `idx_product_variants_active_size` và `idx_product_variants_active_inventory_mode`: tối ưu lọc biến thể theo kích cỡ và chế độ kho.
+- **OpenAPI Configuration**: Tạo `OpenApiConfig` định nghĩa OpenAPI bean, thông tin dự án FreshFlow MVP, schema security `bearerAuth` (JWT placeholder) và `merchantUserIdAuth` (header `X-User-Id`).
+- **DTO & Schema Documentation**: Bổ sung annotation `@Schema` chi tiết cho `ProductCatalogDto`, `ProductVariantDto`, `CapacityDto`, `AvailabilityStatus`, `CreateProductRequest`, `UpdateProductRequest`, `CreateProductVariantRequest`, `UpdateProductVariantRequest`, và `ApiErrorResponse`.
+- **Controller Documentation**: Bổ sung `@Operation`, `@ApiResponse`, `@Parameter`, `@SecurityRequirement` cho toàn bộ 11 endpoint trong `CatalogController`.
+- **Postman Collection**: Xây dựng file `postman/catalog.json` (chuẩn Postman Collection v2.1.0) chia 3 folder (`01 - Public Catalog`, `02 - Merchant Product Management`, `03 - Merchant Variant Management`) với 18 request mẫu kèm test scripts tự động kiểm tra status code.
+- **Automated Verification**: Viết integration test `CatalogOpenApiIntegrationTest` kiểm chứng endpoint `/api-docs` và `/swagger-ui/index.html`. Cập nhật `CatalogSeedMigrationTest` cho migration version 4.
+- **Test Suite**: Chạy toàn bộ bộ test `mvn test` đạt **116/116 test passed**, format mã nguồn đạt chuẩn Google Java Format với `mvn spotless:apply`.
+
+### Evidence
+
+```text
+[INFO] Running com.freshflow.api.catalog.api.controller.CatalogOpenApiIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.freshflow.api.catalog.domain.CatalogSeedMigrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.freshflow.api.catalog.infrastructure.persistence.ProductSpecificationIntegrationTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.freshflow.api.catalog.api.controller.ProductControllerIntegrationTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Results:
+[INFO] Tests run: 116, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+### Blockers
+
+None.
+
+### Next action
+
+Chuyển sang task tiếp theo trong Backlog: FF-02-05-1.
+
