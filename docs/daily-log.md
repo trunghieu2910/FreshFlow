@@ -201,5 +201,49 @@ None.
 
 ### Next action
 
-Chuyển sang task tiếp theo trong Backlog: FF-02-05-1.
+Hoàn thành task FF-02-05-1.
+
+## Entry — FF-02-05-1
+
+**Date:** `2026-09-11`
+**Task:** `FF-02-05-1 — Viết unit/controller test catalog`
+**Priority:** `Must`
+**Area:** `Quality` / `Backend` / `Testing`
+
+### Goal
+
+Xây dựng bộ kiểm thử chuyên sâu (Catalog test suite) gồm ít nhất 20 test cases có tên rõ ràng theo chuẩn BDD; tập trung kiểm thử logic phân quyền (CatalogAccessService), quy tắc nghiệp vụ biến thể (CatalogVariantService), và các mã trạng thái/validation của Controller (CatalogControllerUnitTest).
+
+### Completed
+
+- **Unit Test Phân quyền (`CatalogAccessServiceTest`)**: 9 test cases bao quát logic yêu cầu `actorUserId`, kiểm tra chủ sở hữu cửa hàng (`STORE_ACCESS_DENIED`), tìm kiếm store/product (`STORE_NOT_FOUND`, `PRODUCT_NOT_FOUND`).
+- **Unit Test Biến thể (`CatalogVariantServiceTest`)**: 12 test cases bao quát quy ước đặt tên và kích cỡ STANDARD/M/L (`STANDARD_SIZE_INVALID`), kiểm tra trùng tên biến thể (`VARIANT_DUPLICATE`), kiểm tra giá âm, cập nhật trường dữ liệu, soft delete và truy vấn danh sách biến thể.
+- **Unit/Slice Test Controller (`CatalogControllerUnitTest`)**: 11 test cases sử dụng MockMvc + `@MockitoBean` kiểm thử toàn bộ endpoint của `CatalogController`: status `200 OK`, `201 Created` kèm `Location`, `204 No Content`, `400 Bad Request` validation, `403 Forbidden` access denied, `404 Not Found`, `409 Conflict` duplicate SKU, và phân trang/lọc tham số.
+- **Kiểm thử tự động toàn diện**: Tổng số test của dự án tăng từ **116** lên **148** test (bổ sung 32 test mới, vượt chỉ tiêu tối thiểu 20 test). 100% test cases đều pass sạch sẽ (`BUILD SUCCESS`).
+- **Định dạng code**: Áp dụng định dạng Google Java Format qua `mvn spotless:apply`.
+
+### Evidence
+
+```text
+[INFO] Running com.freshflow.api.catalog.application.exception.CatalogAccessServiceTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.freshflow.api.catalog.application.CatalogVariantServiceTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.freshflow.api.catalog.api.controller.CatalogControllerUnitTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0
+...
+[INFO] Results:
+[INFO] Tests run: 148, Failures: 0, Errors: 0, Skipped: 0
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+```
+
+### Blockers
+
+None.
+
+### Next action
+
+Chuyển sang task tiếp theo trong Backlog: FF-02-05-2 (Kiểm tra JPA query và dữ liệu seed — Lazy loading, index, query correctness).
 
