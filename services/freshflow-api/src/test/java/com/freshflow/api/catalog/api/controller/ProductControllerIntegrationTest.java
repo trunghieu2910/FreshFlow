@@ -182,19 +182,29 @@ class ProductControllerIntegrationTest {
 
   @Test
   void filtersProductsByVariantSize_M_and_STANDARD() throws Exception {
-    // Sized M filter
+    // Sized M filter: returns products with size M variant (includes Classic Milk Tea, excludes
+    // Butter Croissant)
     mockMvc
         .perform(get("/api/v1/stores/{storeId}/products", storeId).param("size", "M"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content.length()").value(1))
-        .andExpect(jsonPath("$.content[0].name").value("Classic Milk Tea"));
+        .andExpect(
+            jsonPath("$.content[*].name").value(org.hamcrest.Matchers.hasItem("Classic Milk Tea")))
+        .andExpect(
+            jsonPath("$.content[*].name")
+                .value(
+                    org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem("Butter Croissant"))));
 
-    // STANDARD (unsized) filter
+    // STANDARD (unsized) filter: returns products with STANDARD variant (includes Butter Croissant,
+    // excludes Classic Milk Tea)
     mockMvc
         .perform(get("/api/v1/stores/{storeId}/products", storeId).param("size", "STANDARD"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content.length()").value(1))
-        .andExpect(jsonPath("$.content[0].name").value("Butter Croissant"));
+        .andExpect(
+            jsonPath("$.content[*].name").value(org.hamcrest.Matchers.hasItem("Butter Croissant")))
+        .andExpect(
+            jsonPath("$.content[*].name")
+                .value(
+                    org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem("Classic Milk Tea"))));
   }
 
   @Test

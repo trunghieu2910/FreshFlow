@@ -247,3 +247,57 @@ None.
 
 Chuyển sang task tiếp theo trong Backlog: FF-02-05-2 (Kiểm tra JPA query và dữ liệu seed — Lazy loading, index, query correctness).
 
+## Entry — FF-02-05-2
+
+**Date:** `2026-09-11`
+**Task:** `FF-02-05-2 — Kiểm tra JPA query và dữ liệu seed (Lazy loading, index, query correctness)`
+**Priority:** `Should`
+**Area:** `Database` / `Backend` / `Performance`
+
+### Goal
+
+Kiểm tra và tối ưu hóa truy vấn JPA trong API Catalog, loại bỏ triệt để vấn đề N+1 Query đối với các tập hợp quan hệ lười (Lazy collection `Product.variants`), bổ sung chỉ mục tối ưu cho tìm kiếm từ khóa không phân biệt hoa thường (`LOWER(name)`), và mở rộng bộ dữ liệu mẫu (seed data) đạt hơn 30 sản phẩm F&B thực tế để kiểm thử tải, phân trang và truy vấn.
+
+### Completed
+
+- **Khử triệt để N+1 Query bằng Batch Fetching:**
+  - Cấu hình `@BatchSize(size = 50)` trên tập hợp `variants` trong thực thể [`Product.java`](file:///d:/FreshFlow/services/freshflow-api/src/main/java/com/freshflow/api/catalog/domain/Product.java).
+  - Cấu hình thuộc tính toàn cục `spring.jpa.properties.hibernate.default_batch_fetch_size=50` trong [`application.properties`](file:///d:/FreshFlow/services/freshflow-api/src/main/resources/application.properties).
+  - Nhờ cơ chế batch fetch, khi nạp 20 sản phẩm trên một trang, Hibernate chỉ thực thi đúng 1 câu lệnh `SELECT ... WHERE product_id IN (?, ..., ?)` gom toàn bộ biến thể, thay vì phát sinh 20 câu lệnh riêng rẽ.
+- **Tạo Flyway Migration `V5__seed_realistic_catalog_and_search_indexes.sql`:**
+  - Tạo Functional Index `idx_products_store_active_lower_name` trên `products (store_id, is_active, LOWER(name))`.
+  - Mở rộng 4 danh mục F&B mới: `Coffee`, `Fruit Tea`, `Desserts`, `Toppings`.
+  - Thêm 34 sản phẩm F&B thực tế (tổng cộng 36 sản phẩm trong cửa hàng `FreshFlow Demo Kitchen`), bao gồm 57 biến thể (M, L, STANDARD), giá tiền VND thực tế (10,000 - 55,000 VND), đường dẫn ảnh demo và sức chứa hàng ngày `daily_capacity_default` (25 - 200 suất).
+  - Đảm bảo tính idempotent an toàn khi chạy lại với mệnh đề `ON CONFLICT DO NOTHING`.
+- **Cập nhật & Xây dựng Test Suite:**
+  - Cập nhật [`CatalogSeedMigrationTest.java`](file:///d:/FreshFlow/services/freshflow-api/src/test/java/com/freshflow/api/catalog/domain/CatalogSeedMigrationTest.java) xác thực migration version = 5, tổng số sản phẩm $\ge 30$, biến thể $\ge 40$, danh mục $\ge 6$, và chỉ mục `idx_products_store_active_lower_name` tồn tại.
+  - Viết mới [`CatalogQueryPerformanceIntegrationTest.java`](file:///d:/FreshFlow/services/freshflow-api/src/test/java/com/freshflow/api/catalog/application/CatalogQueryPerformanceIntegrationTest.java) kích hoạt Hibernate Statistics, kiểm chứng việc tải trang 20 sản phẩm chỉ thực thi tối đa 5-6 SQL statements (chứng minh không có N+1 query), kiểm tra tìm kiếm hoa/thường không phân biệt (`oolong` vs `OOLONG`), và kiểm tra phân trang liên tục giữa các trang mà không bị trùng lặp.
+  - Tinh chỉnh assertion trong [`ProductControllerIntegrationTest.java`](file:///d:/FreshFlow/services/freshflow-api/src/test/java/com/freshflow/api/catalog/api/controller/ProductControllerIntegrationTest.java) để tương thích chính xác với catalog 30+ sản phẩm.
+- **Định dạng & Kiểm thử:**
+  - Toàn bộ 151 test cases đều PASS 100% (`BUILD SUCCESS`).
+  - Áp dụng chuẩn Google Java Format qua `mvn spotless:apply`.
+
+### Evidence
+
+```text
+[INFO] Running com.freshflow.api.catalog.application.CatalogQueryPerformanceIntegrationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.freshflow.api.catalog.domain.CatalogSeedMigrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+...
+[INFO] Results:
+[INFO] Tests run: 151, Failures: 0, Errors: 0, Skipped: 0
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+```
+
+### Blockers
+
+None.
+
+### Next action
+
+Đánh dấu hoàn thành task FF-02-05-2 trong Backlog và chuẩn bị cho Sprint tiếp theo.
+
+

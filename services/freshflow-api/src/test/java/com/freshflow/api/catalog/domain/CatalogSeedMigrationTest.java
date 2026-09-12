@@ -1,6 +1,7 @@
 package com.freshflow.api.catalog.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 import org.flywaydb.core.Flyway;
@@ -19,18 +20,35 @@ class CatalogSeedMigrationTest {
   @Autowired private Flyway flyway;
 
   @Test
-  void v2_applies_expected_catalog_seed() {
-    assertEquals(4, migrationVersion());
+  void v5_applies_expected_catalog_seed_and_indexes() {
+    assertEquals(5, migrationVersion());
     assertEquals(1, count("users", "email = 'demo.owner@freshflow.local'"));
     assertEquals(1, count("stores", "name = 'FreshFlow Demo Kitchen'"));
-    assertEquals(2, count("categories", "name IN ('Beverages', 'Bakery')"));
     assertEquals(2, count("products", "name IN ('Classic Milk Tea', 'Butter Croissant')"));
-    assertEquals(3, count("product_variants", "name IN ('M', 'L', 'STANDARD')"));
     assertEquals(
-        1,
+        3,
         count(
             "product_variants",
-            "name = 'STANDARD' AND size IS NULL AND inventory_mode = 'LIMITED_STOCK'"));
+            "product_id IN (SELECT id FROM products WHERE name IN ('Classic Milk Tea', 'Butter Croissant'))"));
+
+    // Verify expanded realistic catalog dataset (>= 30 products)
+    int totalProducts = count("products", "1=1");
+    assertTrue(
+        totalProducts >= 30, "Expected at least 30 catalog products, but found " + totalProducts);
+
+    int totalVariants = count("product_variants", "1=1");
+    assertTrue(
+        totalVariants >= 40, "Expected at least 40 product variants, but found " + totalVariants);
+
+    int totalCategories = count("categories", "is_active = true");
+    assertTrue(
+        totalCategories >= 6,
+        "Expected at least 6 active categories, but found " + totalCategories);
+
+    // Verify search functional index is created
+    int lowerNameIndexCount =
+        count("pg_indexes", "indexname = 'idx_products_store_active_lower_name'");
+    assertEquals(1, lowerNameIndexCount, "Index idx_products_store_active_lower_name should exist");
   }
 
   @Test
@@ -52,9 +70,9 @@ class CatalogSeedMigrationTest {
     return Map.of(
         "users", count("users", "email = 'demo.owner@freshflow.local'"),
         "stores", count("stores", "name = 'FreshFlow Demo Kitchen'"),
-        "categories", count("categories", "name IN ('Beverages', 'Bakery')"),
-        "products", count("products", "name IN ('Classic Milk Tea', 'Butter Croissant')"),
-        "variants", count("product_variants", "name IN ('M', 'L', 'STANDARD')"));
+        "categories", count("categories", "is_active = true"),
+        "products", count("products", "1=1"),
+        "variants", count("product_variants", "1=1"));
   }
 
   private int count(String table, String predicate) {

@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.ColumnDefault;
 
 @Entity
@@ -45,6 +46,7 @@ public class Product {
   @NotNull @Column(name = "updated_at", nullable = false)
   private OffsetDateTime updatedAt;
 
+  @BatchSize(size = 50)
   @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<ProductVariant> variants = new ArrayList<>();
 
