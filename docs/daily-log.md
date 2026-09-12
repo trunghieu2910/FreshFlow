@@ -350,7 +350,48 @@ None.
 
 ### Next action
 
-Chuyển sang Sprint 3 (Week 3) - Triển khai cơ chế xác thực người dùng (Authentication), JWT token và phân quyền RBAC (Customer, Merchant, Admin, Driver).
+Hoàn thành task FF-02-07-1.
+
+## Entry — FF-02-07-1
+
+**Date:** `2026-09-13`
+**Task:** `FF-02-07-1 — Ôn JPA/REST và viết retrospective`
+**Priority:** `Must`
+**Area:** `Review` / `Documentation`
+
+### Goal
+
+Tổng kết Sprint 2 (Catalog Vertical Slice), thực hiện kỹ thuật Active Recall và biên soạn tài liệu retrospective tuần W02, phân tích sâu 5 chủ đề phỏng vấn kỹ thuật cốt lõi (DTO vs Entity, Server price calculation, N+1 query, Pagination, Flyway migration & 2-tier validation), và xây dựng bài kiểm tra Self-Quiz đánh giá kiến thức đạt $\ge 80\%$.
+
+### Completed
+
+- **Tài liệu hóa Retrospective Tuần 2 (`docs/reviews/weekly-review-w02.md`):**
+  - Đánh giá toàn diện các thành tựu đạt được (What went well): Kiến trúc Modular Monolith, Flyway migrations V1-V5, xử lý N+1 bằng Batch Fetching, test suite 151 test cases pass 100%.
+  - Rút kinh nghiệm (What could be improved): Tuân thủ chặt chẽ ranh giới package boundary từ sớm, chuẩn bị thay thế mock auth bằng JWT token.
+  - Thiết lập Action items cụ thể cho Sprint 3 (Authentication, JWT/RBAC, Merchant React Web).
+- **Phân tích chuyên sâu 5 câu hỏi phỏng vấn kỹ thuật:**
+  - Lập luận vì sao KHÔNG NÊN trả trực tiếp JPA Entity ra REST API (chống Over-fetching, Mass Assignment, LazyInitializationException, Infinite recursion).
+  - Lập luận vì sao SERVER PHẢI tính toán lại tổng tiền và đơn giá (Zero Trust client, dữ liệu giá biến động thời gian thực, lưu vết bất biến bằng `OrderItemSnapshot`).
+  - Phân tích chi tiết lỗi N+1 Query và cơ chế Batch Fetching `@BatchSize(50)`.
+  - So sánh phân trang Offset-based vs Keyset-based và ứng dụng Functional Index `LOWER(name)`.
+  - Quy tắc an toàn khi viết Flyway migration trên Production và kiến trúc Validation 2 tầng.
+- **Biên soạn bài kiểm tra Self-Quiz (Active Recall):**
+  - Xây dựng 10 câu hỏi trắc nghiệm & tình huống có đáp án chi tiết và bảng thang điểm chuẩn mực.
+- **Cập nhật Backlog:**
+  - Đánh dấu hoàn thành Task FF-02-07-1 (`Done`) trong `plan/backlog-freshflow-mvp-12-tuan-updated.xlsx`.
+
+### Evidence
+
+Tài liệu hoàn chỉnh tại: [`docs/reviews/weekly-review-w02.md`](file:///d:/FreshFlow/docs/reviews/weekly-review-w02.md)
+
+### Blockers
+
+None.
+
+### Next action
+
+Chuyển sang task tiếp theo trong Backlog: FF-02-07-2 (Chuẩn bị React architecture cho Merchant Web).
+
 
 
 
