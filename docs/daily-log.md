@@ -300,4 +300,57 @@ None.
 
 Đánh dấu hoàn thành task FF-02-05-2 trong Backlog và chuẩn bị cho Sprint tiếp theo.
 
+## Entry — FF-02-06-2
+
+**Date:** `2026-09-13`
+**Task:** `FF-02-06-2 — Đóng gói release Catalog v0.1`
+**Priority:** `Must`
+**Area:** `Refactor` / `Documentation` / `Release`
+
+### Goal
+
+Chuẩn hóa package boundaries, nâng cấp phiên bản theo Semantic Versioning (`0.1.0`), tài liệu hóa toàn diện hệ thống (README.md, CHANGELOG.md), đóng gói release Catalog v0.1 với Git Tag và Branch release, đồng thời kiểm chứng tính toàn vẹn thông qua bộ kiểm thử tự động và clean test.
+
+### Completed
+
+- **Refactor Package Boundaries:**
+  - Di chuyển `CatalogController` sang `com.freshflow.api.catalog.api.controller` đồng bộ với cấu trúc package test và chuẩn Modular Monolith.
+  - Di chuyển service kiểm tra phân quyền `CatalogAccessService` từ package lỗi thời `application.exception` sang đúng package nghiệp vụ `com.freshflow.api.catalog.application`.
+  - Cập nhật tương ứng toàn bộ file kiểm thử và import (`CatalogAccessServiceTest`, `CatalogVariantService`, `CatalogControllerUnitTest`).
+- **Semantic Versioning & Changelog:**
+  - Nâng version artifact Maven trong `pom.xml` từ `0.0.1-SNAPSHOT` lên `0.1.0` (Catalog v0.1.0 release).
+  - Soạn thảo tài liệu `CHANGELOG.md` chuẩn Keep a Changelog v1.1 ghi nhận chi tiết 5 Flyway migrations, API Customer/Merchant, tối ưu chỉ mục functional index và batch fetching.
+- **Tài liệu hóa dự án (README.md nâng cao):**
+  - Bổ sung hướng dẫn cài đặt & môi trường (JDK 21, Docker Compose, PostgreSQL 16).
+  - Bảng danh mục đầy đủ các REST endpoints (Customer browsing & Merchant management kèm query parameters và header xác thực `X-User-Id`).
+  - Hướng dẫn lệnh kiểm thử & chuẩn hóa mã nguồn (`mvn clean test`, `mvn spotless:apply`, `mvn verify`).
+  - Mô tả rõ các giới hạn đã biết của bản v0.1 (Known Limitations) về Authentication (chờ JWT Sprint 3) và Dynamic inventory (chờ Order Sprint).
+- **Kiểm thử & Định dạng:**
+  - Kiểm tra chuẩn định dạng Google Java Format bằng `mvn spotless:check` thành công.
+  - Toàn bộ 151 test cases chạy sạch sẽ và PASS 100% (`BUILD SUCCESS`).
+- **Git Release Tag & Branch:**
+  - Tạo Git branch `catalog-v0.1` và annotated tag `v0.1`, `catalog-v0.1`.
+- **Cập nhật Backlog:**
+  - Đánh dấu hoàn thành Task FF-02-06-2 (`Done`) trong `plan/backlog-freshflow-mvp-12-tuan-updated.xlsx`.
+
+### Evidence
+
+```text
+[INFO] --- spotless:2.43.0:check (default-cli) @ freshflow-api ---
+[INFO] Spotless.Java is keeping 72 files clean - 0 needs changes to be clean
+...
+[INFO] Results:
+[INFO] Tests run: 151, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+### Blockers
+
+None.
+
+### Next action
+
+Chuyển sang Sprint 3 (Week 3) - Triển khai cơ chế xác thực người dùng (Authentication), JWT token và phân quyền RBAC (Customer, Merchant, Admin, Driver).
+
+
 

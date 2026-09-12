@@ -1,4 +1,4 @@
-package com.freshflow.api.catalog.application.exception;
+package com.freshflow.api.catalog.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -7,6 +7,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.freshflow.api.catalog.application.exception.CatalogErrorCode;
+import com.freshflow.api.catalog.application.exception.CatalogNotFoundException;
+import com.freshflow.api.catalog.application.exception.CatalogRuleViolationException;
 import com.freshflow.api.catalog.domain.Product;
 import com.freshflow.api.catalog.domain.Store;
 import com.freshflow.api.catalog.domain.User;

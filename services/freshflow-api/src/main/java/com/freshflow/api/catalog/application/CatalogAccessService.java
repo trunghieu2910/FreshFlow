@@ -1,5 +1,8 @@
-package com.freshflow.api.catalog.application.exception;
+package com.freshflow.api.catalog.application;
 
+import com.freshflow.api.catalog.application.exception.CatalogErrorCode;
+import com.freshflow.api.catalog.application.exception.CatalogNotFoundException;
+import com.freshflow.api.catalog.application.exception.CatalogRuleViolationException;
 import com.freshflow.api.catalog.domain.Product;
 import com.freshflow.api.catalog.domain.Store;
 import com.freshflow.api.catalog.infrastructure.persistence.ProductRepository;

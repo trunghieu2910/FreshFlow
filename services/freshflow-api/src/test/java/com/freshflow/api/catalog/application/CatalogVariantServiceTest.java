@@ -16,7 +16,6 @@ import com.freshflow.api.catalog.api.dto.ProductVariantDto;
 import com.freshflow.api.catalog.api.mapper.CatalogDtoMapper;
 import com.freshflow.api.catalog.application.command.CreateProductVariantCommand;
 import com.freshflow.api.catalog.application.command.UpdateProductVariantCommand;
-import com.freshflow.api.catalog.application.exception.CatalogAccessService;
 import com.freshflow.api.catalog.application.exception.CatalogErrorCode;
 import com.freshflow.api.catalog.application.exception.CatalogNotFoundException;
 import com.freshflow.api.catalog.application.exception.CatalogRuleViolationException;

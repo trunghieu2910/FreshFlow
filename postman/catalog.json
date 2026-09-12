@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "freshflow-catalog-api-collection-v1",
+    "_postman_id": "freshflow-catalog-api-collection-v2",
     "name": "FreshFlow - Catalog API Collection",
-    "description": "Comprehensive Postman collection for the FreshFlow Catalog module. Includes public customer catalog browsing (search, filter, pagination, capacity status) and merchant administration (product and variant CRUD) with both happy path and error cases.",
+    "description": "Comprehensive Postman collection for the FreshFlow Catalog module. Demonstrates the complete End-to-End Vertical Slice: Seed -> List -> Create -> Update -> Filter -> Delete, along with Customer public browsing, capacity status, and business error cases.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -28,28 +28,47 @@
     },
     {
       "key": "merchantUserId",
-      "value": "2",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "demoProductId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "demoVariantId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "demoProductName",
+      "value": "Demo Lotus Tea",
       "type": "string"
     }
   ],
   "item": [
     {
-      "name": "01 - Public Catalog",
-      "description": "Endpoints accessible by customers for browsing stores and products.",
+      "name": "01 - Public Catalog (Browsing Seed Data)",
+      "description": "Customer browsing endpoints: stores list, default pagination, keyword search, filters by category/size/stock/availability, and product details.",
       "item": [
         {
-          "name": "List Active Stores",
+          "name": "1.1 - List Active Stores",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
+                  "pm.test(\"Status code is 200 OK\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Response is an array of stores\", function () {",
+                  "pm.test(\"Response is an array of active stores\", function () {",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData).to.be.an(\"array\");",
+                  "    pm.expect(jsonData.length).to.be.greaterThan(0);",
+                  "    var store = jsonData.find(function(s) { return s.name === 'FreshFlow Demo Kitchen'; });",
+                  "    pm.expect(store).to.not.be.undefined;",
+                  "    pm.collectionVariables.set(\"storeId\", String(store.id));",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -73,20 +92,31 @@
           }
         },
         {
-          "name": "List Store Products - Default Pagination",
+          "name": "1.2 - List Store Products - Default Pagination",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
+                  "pm.test(\"Status code is 200 OK\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Contains page metadata and content\", function () {",
+                  "pm.test(\"Contains pagination metadata and seed products >= 30\", function () {",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData).to.have.property(\"content\");",
                   "    pm.expect(jsonData).to.have.property(\"totalElements\");",
-                  "    pm.expect(jsonData).to.have.property(\"totalPages\");",
+                  "    pm.expect(jsonData.totalElements).to.be.at.least(30);",
+                  "    pm.expect(jsonData.content).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Products have variants populated with capacity status\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var firstProduct = jsonData.content[0];",
+                  "    pm.expect(firstProduct).to.have.property(\"variants\");",
+                  "    pm.expect(firstProduct.variants).to.be.an(\"array\");",
+                  "    pm.collectionVariables.set(\"productId\", String(firstProduct.id));",
+                  "    if (firstProduct.variants.length > 0) {",
+                  "        pm.collectionVariables.set(\"variantId\", String(firstProduct.variants[0].id));",
+                  "    }",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -110,18 +140,24 @@
           }
         },
         {
-          "name": "Search Products by Keyword",
+          "name": "1.3 - Search Products by Keyword (Tea)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
+                  "pm.test(\"Status code is 200 OK\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Products contain keyword in name, description or SKU\", function () {",
+                  "pm.test(\"Matching products contain keyword in name or description\", function () {",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData.content).to.be.an(\"array\");",
+                  "    pm.expect(jsonData.content.length).to.be.greaterThan(0);",
+                  "    var allMatch = jsonData.content.every(function(p) {",
+                  "        var text = (p.name + ' ' + (p.description || '')).toLowerCase();",
+                  "        return text.includes('tea');",
+                  "    });",
+                  "    pm.expect(allMatch).to.be.true;",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -137,29 +173,34 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/products?search=tra",
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/products?search=Tea",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "stores", "{{storeId}}", "products"],
               "query": [
                 {
                   "key": "search",
-                  "value": "tra",
-                  "description": "Keyword to match against product name, description, or variant SKU"
+                  "value": "Tea",
+                  "description": "Keyword to match against product name, description, or variant"
                 }
               ]
             },
-            "description": "Searches store products containing the term 'tra'."
+            "description": "Searches store products containing the term 'Tea'."
           }
         },
         {
-          "name": "Filter Products by Category",
+          "name": "1.4 - Filter Products by Category (Beverages)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
+                  "pm.test(\"Status code is 200 OK\", function () {",
                   "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Returns products under category\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.content).to.be.an(\"array\");",
+                  "    pm.expect(jsonData.content.length).to.be.greaterThan(0);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -186,18 +227,25 @@
                 }
               ]
             },
-            "description": "Filters products under a specific store category."
+            "description": "Filters products under store category 1 (Beverages)."
           }
         },
         {
-          "name": "Filter Products by Variant Size (M)",
+          "name": "1.5 - Filter Products by Variant Size (M)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
+                  "pm.test(\"Status code is 200 OK\", function () {",
                   "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Returns products with size M variant\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.content).to.be.an(\"array\");",
+                  "    pm.expect(jsonData.content.length).to.be.greaterThan(0);",
+                  "    var hasClassicMilkTea = jsonData.content.some(function(p) { return p.name === 'Classic Milk Tea'; });",
+                  "    pm.expect(hasClassicMilkTea).to.be.true;",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -220,22 +268,29 @@
                 {
                   "key": "size",
                   "value": "M",
-                  "description": "Variant size (M, L, or STANDARD)"
+                  "description": "Filter by variant size"
                 }
               ]
             },
-            "description": "Filters products having variants of size M."
+            "description": "Filters sized products having variant size M."
           }
         },
         {
-          "name": "Filter Products by Variant Size (STANDARD)",
+          "name": "1.6 - Filter Products by Variant Size (STANDARD)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
+                  "pm.test(\"Status code is 200 OK\", function () {",
                   "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Returns unsized standard products\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.content).to.be.an(\"array\");",
+                  "    pm.expect(jsonData.content.length).to.be.greaterThan(0);",
+                  "    var hasCroissant = jsonData.content.some(function(p) { return p.name === 'Butter Croissant'; });",
+                  "    pm.expect(hasCroissant).to.be.true;",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -258,22 +313,27 @@
                 {
                   "key": "size",
                   "value": "STANDARD",
-                  "description": "Variant size for standard/single-size items (null size)"
+                  "description": "Filter by STANDARD variant"
                 }
               ]
             },
-            "description": "Filters products having standard/single-size variants."
+            "description": "Filters unsized bakery/dessert products having STANDARD variant."
           }
         },
         {
-          "name": "Filter Products by Inventory Mode (MADE_TO_ORDER)",
+          "name": "1.7 - Filter Products by Inventory Mode (MADE_TO_ORDER)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
+                  "pm.test(\"Status code is 200 OK\", function () {",
                   "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Returns MADE_TO_ORDER products\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.content).to.be.an(\"array\");",
+                  "    pm.expect(jsonData.content.length).to.be.greaterThan(0);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -296,22 +356,27 @@
                 {
                   "key": "inventoryMode",
                   "value": "MADE_TO_ORDER",
-                  "description": "Inventory mode: MADE_TO_ORDER or LIMITED_STOCK"
+                  "description": "Filter by inventory mode"
                 }
               ]
             },
-            "description": "Filters products that are prepared fresh made-to-order."
+            "description": "Filters products that are freshly prepared upon order."
           }
         },
         {
-          "name": "Filter Available Products Only",
+          "name": "1.8 - Filter Available Products Only",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
+                  "pm.test(\"Status code is 200 OK\", function () {",
                   "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"All returned products have available status\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.content).to.be.an(\"array\");",
+                  "    pm.expect(jsonData.content.length).to.be.greaterThan(0);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -334,26 +399,29 @@
                 {
                   "key": "availableOnly",
                   "value": "true",
-                  "description": "Only return products with at least one available variant"
+                  "description": "Match only products having available variants"
                 }
               ]
             },
-            "description": "Filters products currently available for purchase (excluding capacity exhausted items)."
+            "description": "Filters products currently available for purchase."
           }
         },
         {
-          "name": "Custom Pagination and Sorting",
+          "name": "1.9 - Custom Pagination and Sorting",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
+                  "pm.test(\"Status code is 200 OK\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Page size matches requested limit\", function () {",
+                  "pm.test(\"Page size is 5 and content has exactly 5 items\", function () {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.size).to.eql(2);",
+                  "    pm.expect(jsonData.content.length).to.eql(5);",
+                  "    pm.expect(jsonData.size).to.eql(5);",
+                  "    pm.expect(jsonData.number).to.eql(0);",
+                  "    pm.expect(jsonData.totalPages).to.be.at.least(6);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -369,7 +437,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/products?page=0&size=2&sort=name,asc",
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/products?page=0&size=5&sort=name,asc",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "stores", "{{storeId}}", "products"],
               "query": [
@@ -380,8 +448,8 @@
                 },
                 {
                   "key": "size",
-                  "value": "2",
-                  "description": "Page size limit"
+                  "value": "5",
+                  "description": "Page size"
                 },
                 {
                   "key": "sort",
@@ -390,22 +458,24 @@
                 }
               ]
             },
-            "description": "Retrieves page 0 with size 2 sorted alphabetically by name."
+            "description": "Tests custom page size and alphabetical name sorting."
           }
         },
         {
-          "name": "Get Product Detail - Success 200",
+          "name": "1.10 - Get Product Detail - Success 200",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
+                  "pm.test(\"Status code is 200 OK\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Returns correct product ID\", function () {",
+                  "pm.test(\"Product ID matches and has valid fields\", function () {",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData.id).to.eql(Number(pm.collectionVariables.get(\"productId\")));",
+                  "    pm.expect(jsonData).to.have.property(\"name\");",
+                  "    pm.expect(jsonData).to.have.property(\"variants\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -425,22 +495,22 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "stores", "{{storeId}}", "products", "{{productId}}"]
             },
-            "description": "Retrieves details of a specific product and its variants."
+            "description": "Retrieves product detail with variants and availability."
           }
         },
         {
-          "name": "Get Product Detail - Not Found 404 (Error Case)",
+          "name": "1.11 - Get Product Detail - Not Found 404 (Error Case)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 404\", function () {",
+                  "pm.test(\"Status code is 404 Not Found\", function () {",
                   "    pm.response.to.have.status(404);",
                   "});",
-                  "pm.test(\"Error response code is PRODUCT_NOT_FOUND\", function () {",
+                  "pm.test(\"Returns CATALOG_PRODUCT_NOT_FOUND error code\", function () {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.code).to.eql(\"PRODUCT_NOT_FOUND\");",
+                  "    pm.expect(jsonData.code).to.eql(\"CATALOG_PRODUCT_NOT_FOUND\");",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -460,27 +530,46 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "stores", "{{storeId}}", "products", "999999"]
             },
-            "description": "Attempts to fetch a non-existent product ID, expecting 404."
+            "description": "Tests product not found error response."
           }
         }
       ]
     },
     {
-      "name": "02 - Merchant Product Management",
-      "description": "Endpoints used by merchant store owners to manage products.",
+      "name": "02 - Vertical Slice Lifecycle (Create -> Update -> Filter -> Delete)",
+      "description": "End-to-End Vertical Slice: Merchant creates a new product and variant, updates details, Customer filters and verifies, then Merchant deletes (soft-delete) and Customer confirms exclusion.",
       "item": [
         {
-          "name": "Create Product - Success 201",
+          "name": "2.1 - Merchant Create Product - Success 201",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var timestamp = new Date().getTime();",
+                  "pm.collectionVariables.set(\"demoProductName\", \"Demo Lotus Tea \" + timestamp);"
+                ],
+                "type": "text/javascript"
+              }
+            },
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 201\", function () {",
+                  "pm.test(\"Status code is 201 Created\", function () {",
                   "    pm.response.to.have.status(201);",
                   "});",
-                  "pm.test(\"Location header is present\", function () {",
-                  "    pm.expect(pm.response.headers.get(\"Location\")).to.be.a(\"string\");",
+                  "pm.test(\"Location header is present and ID is captured\", function () {",
+                  "    var location = pm.response.headers.get(\"Location\");",
+                  "    pm.expect(location).to.be.a(\"string\");",
+                  "    var segments = location.split(\"/\");",
+                  "    var newId = segments[segments.length - 1];",
+                  "    pm.collectionVariables.set(\"demoProductId\", newId);",
+                  "});",
+                  "pm.test(\"Response body contains created product\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.eql(pm.collectionVariables.get(\"demoProductName\"));",
+                  "    pm.expect(jsonData.active).to.be.true;",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -501,24 +590,356 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"storeCategoryId\": 1,\n  \"name\": \"Trà Sen Vàng Kem Cheese\",\n  \"description\": \"Trà sen thơm ngát kết hợp hạt sen bùi bùi và lớp kem cheese béo mịn\",\n  \"imageUrl\": \"https://images.freshflow.vn/products/tra-sen-vang.jpg\",\n  \"active\": true\n}"
+              "raw": "{\n  \"storeCategoryId\": 1,\n  \"name\": \"{{demoProductName}}\",\n  \"description\": \"Fragrant lotus seed tea with rich salted cream cheese foam\",\n  \"imageUrl\": \"https://images.freshflow.local/products/lotus-tea.jpg\",\n  \"active\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products"]
             },
-            "description": "Creates a new product under merchant's store."
+            "description": "Merchant creates a brand new product under FreshFlow Demo Kitchen."
           }
         },
         {
-          "name": "Create Product - Validation Error 400 (Error Case)",
+          "name": "2.2 - Merchant Create Variant - Success 201",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 400\", function () {",
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Response contains created variant ID\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"id\");",
+                  "    pm.expect(jsonData.price).to.eql(45000.0);",
+                  "    pm.collectionVariables.set(\"demoVariantId\", String(jsonData.id));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{merchantUserId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"M\",\n  \"size\": \"M\",\n  \"price\": 45000.00,\n  \"inventoryMode\": \"MADE_TO_ORDER\",\n  \"autoAcceptOverride\": true,\n  \"maxQuantityPerOrder\": 10,\n  \"dailyCapacityDefault\": 120,\n  \"available\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products/{{demoProductId}}/variants",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products", "{{demoProductId}}", "variants"]
+            },
+            "description": "Creates a size M variant for the newly created product."
+          }
+        },
+        {
+          "name": "2.3 - Merchant List Variants - Success 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Returns variants of the newly created product\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an(\"array\");",
+                  "    pm.expect(jsonData.length).to.be.greaterThan(0);",
+                  "    var v = jsonData.find(function(item) { return item.name === 'M'; });",
+                  "    pm.expect(v).to.not.be.undefined;",
+                  "    pm.expect(v.price).to.eql(45000.0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{merchantUserId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products/{{demoProductId}}/variants",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products", "{{demoProductId}}", "variants"]
+            },
+            "description": "Merchant lists all variants of the newly created product."
+          }
+        },
+        {
+          "name": "2.4 - Merchant Update Variant - Success 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Updated price and capacity reflected\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.price).to.eql(48000.0);",
+                  "    pm.expect(jsonData.dailyCapacityDefault).to.eql(150);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{merchantUserId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 48000.00,\n  \"dailyCapacityDefault\": 150\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products/{{demoProductId}}/variants/{{demoVariantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products", "{{demoProductId}}", "variants", "{{demoVariantId}}"]
+            },
+            "description": "Merchant updates variant price and capacity."
+          }
+        },
+        {
+          "name": "2.5 - Merchant Update Product - Success 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Updated name reflected in response\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.include(\"Special Macchiato\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{merchantUserId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{demoProductName}} Special Macchiato\",\n  \"description\": \"Updated signature formula with toasted lotus seeds\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products/{{demoProductId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products", "{{demoProductId}}"]
+            },
+            "description": "Merchant updates product name and description."
+          }
+        },
+        {
+          "name": "2.6 - Customer Filter & Verify New Product - Success 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Customer sees updated product in catalog with updated variant price\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.content).to.be.an(\"array\");",
+                  "    pm.expect(jsonData.content.length).to.be.greaterThan(0);",
+                  "    var p = jsonData.content[0];",
+                  "    pm.expect(p.name).to.include(\"Special Macchiato\");",
+                  "    pm.expect(p.variants.length).to.be.greaterThan(0);",
+                  "    pm.expect(p.variants[0].price).to.eql(48000.0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/products?search={{demoProductName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stores", "{{storeId}}", "products"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "{{demoProductName}}",
+                  "description": "Search by dynamically created product name"
+                }
+              ]
+            },
+            "description": "Customer finds the newly created product with updated variants in public catalog."
+          }
+        },
+        {
+          "name": "2.7 - Merchant Delete Variant - Success 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204 No Content\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{merchantUserId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products/{{demoProductId}}/variants/{{demoVariantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products", "{{demoProductId}}", "variants", "{{demoVariantId}}"]
+            },
+            "description": "Merchant soft-deletes the variant."
+          }
+        },
+        {
+          "name": "2.8 - Merchant Delete Product - Success 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204 No Content\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{merchantUserId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products/{{demoProductId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products", "{{demoProductId}}"]
+            },
+            "description": "Merchant soft-deletes the demo product."
+          }
+        },
+        {
+          "name": "2.9 - Customer Verify Product Excluded After Delete - Success 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Deleted product is no longer returned in customer catalog\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.content.length).to.eql(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/products?search={{demoProductName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stores", "{{storeId}}", "products"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "{{demoProductName}}",
+                  "description": "Search for soft-deleted product"
+                }
+              ]
+            },
+            "description": "Verifies that soft-deleted product is immediately excluded from customer catalog."
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Business Error Cases",
+      "description": "Verifies API contract error handling: validation failures (400) and ownership/permission rejections (403).",
+      "item": [
+        {
+          "name": "3.1 - Create Product - Validation Error 400 (Blank Name)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
                   "    pm.response.to.have.status(400);",
                   "});",
                   "pm.test(\"Error code is VALIDATION_ERROR\", function () {",
@@ -556,13 +977,99 @@
           }
         },
         {
-          "name": "Create Product - Access Denied 403 (Error Case)",
+          "name": "3.2 - Create Product - Access Denied 403 (Invalid Owner)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 403\", function () {",
+                  "pm.test(\"Status code is 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Error code indicates CATALOG_STORE_ACCESS_DENIED\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.code).to.include(\"ACCESS_DENIED\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "99999"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"storeCategoryId\": 1,\n  \"name\": \"Unauthorized Product\",\n  \"description\": \"Actor does not own the store\",\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products"]
+            },
+            "description": "Tests ownership check failure when actor user does not own the store."
+          }
+        },
+        {
+          "name": "3.3 - Create Variant - Negative Price Validation 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Returns validation error for negative price\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.code).to.eql(\"VALIDATION_ERROR\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{merchantUserId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Size Invalid Price\",\n  \"size\": \"M\",\n  \"price\": -5000.00,\n  \"inventoryMode\": \"MADE_TO_ORDER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products/{{productId}}/variants",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products", "{{productId}}", "variants"]
+            },
+            "description": "Tests validation error on negative price for product variant."
+          }
+        },
+        {
+          "name": "3.4 - Create Variant - Access Denied 403 (Invalid Owner)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403 Forbidden\", function () {",
                   "    pm.response.to.have.status(403);",
                   "});",
                   "pm.test(\"Error code indicates forbidden access\", function () {",
@@ -588,325 +1095,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"storeCategoryId\": 1,\n  \"name\": \"Trà Xanh Thái Lan\",\n  \"description\": \"Trà thái đỏ\",\n  \"active\": true\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products"]
-            },
-            "description": "Tests ownership check failure when actor user does not own the store."
-          }
-        },
-        {
-          "name": "Update Product - Success 200",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test(\"Updated name is reflected in response\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.name).to.eql(\"Trà Sữa Oolong Đặc Biệt\");",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-User-Id",
-                "value": "{{merchantUserId}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Trà Sữa Oolong Đặc Biệt\",\n  \"description\": \"Công thức mới thơm ngon hơn\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products/{{productId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products", "{{productId}}"]
-            },
-            "description": "Updates product details."
-          }
-        },
-        {
-          "name": "Delete Product - Success 204",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 204 No Content\", function () {",
-                  "    pm.response.to.have.status(204);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "X-User-Id",
-                "value": "{{merchantUserId}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products/{{productId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products", "{{productId}}"]
-            },
-            "description": "Soft-deletes product by deactivating it in the catalog."
-          }
-        }
-      ]
-    },
-    {
-      "name": "03 - Merchant Variant Management",
-      "description": "Endpoints used by merchants to manage product sizes, prices, and inventory modes.",
-      "item": [
-        {
-          "name": "List Product Variants - Success 200",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test(\"Returns array of variants\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.be.an(\"array\");",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products/{{productId}}/variants",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products", "{{productId}}", "variants"]
-            },
-            "description": "Lists all variants for the specified product."
-          }
-        },
-        {
-          "name": "Get Variant Detail - Success 200",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test(\"Variant ID matches requested variant\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.id).to.eql(Number(pm.collectionVariables.get(\"variantId\")));",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products/{{productId}}/variants/{{variantId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products", "{{productId}}", "variants", "{{variantId}}"]
-            },
-            "description": "Retrieves details of a specific variant."
-          }
-        },
-        {
-          "name": "Create Variant - Success 201",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 201\", function () {",
-                  "    pm.response.to.have.status(201);",
-                  "});",
-                  "pm.test(\"Response contains created variant details\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property(\"id\");",
-                  "    pm.expect(jsonData.price).to.eql(42000.0);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-User-Id",
-                "value": "{{merchantUserId}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Size L Lớn\",\n  \"size\": \"L\",\n  \"price\": 42000.00,\n  \"inventoryMode\": \"MADE_TO_ORDER\",\n  \"autoAcceptOverride\": true,\n  \"maxQuantityPerOrder\": 10,\n  \"dailyCapacityDefault\": 100,\n  \"available\": true\n}"
+              "raw": "{\n  \"name\": \"Size M Forbidden\",\n  \"size\": \"M\",\n  \"price\": 35000.00,\n  \"inventoryMode\": \"MADE_TO_ORDER\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products/{{productId}}/variants",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products", "{{productId}}", "variants"]
             },
-            "description": "Creates a new variant under a product."
-          }
-        },
-        {
-          "name": "Create Variant - Validation Error 400 (Error Case)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 400\", function () {",
-                  "    pm.response.to.have.status(400);",
-                  "});",
-                  "pm.test(\"Returns validation error for price\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.code).to.eql(\"VALIDATION_ERROR\");",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-User-Id",
-                "value": "{{merchantUserId}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Size Âm Tiền\",\n  \"size\": \"M\",\n  \"price\": -5000.00,\n  \"inventoryMode\": \"MADE_TO_ORDER\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products/{{productId}}/variants",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products", "{{productId}}", "variants"]
-            },
-            "description": "Tests validation error on negative price."
-          }
-        },
-        {
-          "name": "Update Variant - Success 200",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test(\"Updated price is reflected\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.price).to.eql(39000.0);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-User-Id",
-                "value": "{{merchantUserId}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"price\": 39000.00,\n  \"dailyCapacityDefault\": 150\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products/{{productId}}/variants/{{variantId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products", "{{productId}}", "variants", "{{variantId}}"]
-            },
-            "description": "Updates variant price and default daily capacity."
-          }
-        },
-        {
-          "name": "Delete Variant - Success 204",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 204 No Content\", function () {",
-                  "    pm.response.to.have.status(204);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "X-User-Id",
-                "value": "{{merchantUserId}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/merchant/stores/{{storeId}}/products/{{productId}}/variants/{{variantId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "merchant", "stores", "{{storeId}}", "products", "{{productId}}", "variants", "{{variantId}}"]
-            },
-            "description": "Deletes or deactivates variant."
+            "description": "Tests ownership check failure when modifying variants with unauthorized user."
           }
         }
       ]

@@ -1,4 +1,4 @@
-package com.freshflow.api.catalog.api;
+package com.freshflow.api.catalog.api.controller;
 
 import com.freshflow.api.catalog.api.dto.ProductCatalogDto;
 import com.freshflow.api.catalog.api.dto.ProductVariantDto;
@@ -8,9 +8,9 @@ import com.freshflow.api.catalog.api.request.CreateProductRequest;
 import com.freshflow.api.catalog.api.request.CreateProductVariantRequest;
 import com.freshflow.api.catalog.api.request.UpdateProductRequest;
 import com.freshflow.api.catalog.api.request.UpdateProductVariantRequest;
+import com.freshflow.api.catalog.application.CatalogAccessService;
 import com.freshflow.api.catalog.application.CatalogService;
 import com.freshflow.api.catalog.application.CatalogVariantService;
-import com.freshflow.api.catalog.application.exception.CatalogAccessService;
 import com.freshflow.api.catalog.application.query.ProductFilterCriteria;
 import com.freshflow.api.catalog.domain.InventoryMode;
 import com.freshflow.api.catalog.domain.Product;
