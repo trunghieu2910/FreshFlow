@@ -392,6 +392,46 @@ None.
 
 Chuyển sang task tiếp theo trong Backlog: FF-02-07-2 (Chuẩn bị React architecture cho Merchant Web).
 
+## Entry — FF-02-07-2
+
+**Date:** `2026-09-13`
+**Task:** `FF-02-07-2 — Chuẩn bị React architecture`
+**Priority:** `Must`
+**Area:** `Planning` / `Frontend Architecture`
+
+### Goal
+
+Thiết kế kiến trúc frontend tiêu chuẩn cho cổng thông tin quản trị Merchant Web Portal (`clients/freshflow-web`) theo mô hình Feature-Based Architecture (Screaming Architecture), xây dựng Bản đồ định tuyến (Route Map) và Cây phân cấp thành phần (Component Tree) gắn kết trực tiếp với Catalog Backend API, đưa ra các quyết định công nghệ (Axios vs Fetch, TanStack Query v5 vs SWR), và tuân thủ các quy tắc từ Web Interface Guidelines cùng định hướng tương thích với React Native Mobile.
+
+### Completed
+
+- **Tài liệu hóa Kiến trúc Web Hoàn chỉnh (`docs/web-architecture.md`):**
+  - **Cấu trúc Thư mục Feature-Based:** Quy hoạch rõ ràng các tầng `src/app`, `src/features/catalog` (api, components, pages, types, utils), `src/features/stores`, `src/components/ui` (Design system tái sử dụng), `src/lib`, `src/types`, `src/hooks`.
+  - **Bản đồ Định tuyến & Ma trận Phụ thuộc API (No Orphan Screens):** Ánh xạ 1:1 từng route với use case nghiệp vụ, HTTP method, API backend và quyền hạn:
+    - `/stores`: Lựa chọn cửa hàng làm việc.
+    - `/stores/:storeId/catalog`: Quản lý thực đơn số, phân trang, lọc size, danh mục, search debounce, và kiểm tra công suất.
+    - `/stores/:storeId/catalog` *(Modal)*: Thêm/Sửa thông tin món ăn (`POST`/`PATCH`).
+    - `/stores/:storeId/catalog/:productId`: Chi tiết món ăn và quản lý toàn diện các biến thể (M/L/STANDARD, giá, công suất ngày).
+  - **Cây Phân cấp Thành phần (Component Tree):** Mô hình hóa Provider Tree và Catalog Component Hierarchy trực quan bằng sơ đồ Mermaid diagrams.
+  - **Quyết định Kiến trúc Công nghệ (ADRs):**
+    - *ADR 01 (HTTP Client):* Chọn **Axios** nhờ hỗ trợ sẵn Interceptors (tự động gắn `X-User-Id`), chuẩn hóa tập trung `ApiErrorResponse`, timeout và hủy request cũ khi search debounce (`AbortController`).
+    - *ADR 02 (Query Strategy):* Chọn **TanStack React Query v5** quản lý Server State (cache 5 phút, `placeholderData: keepPreviousData` chống giật lag phân trang, `useMutation` với Optimistic UI updates). Phối hợp **Zustand** cho Global UI State và **React Hook Form + Zod** cho Form Validation.
+  - **Tuân thủ Tiêu chuẩn Giao diện (Web Interface Guidelines):** Hỗ trợ điều hướng bàn phím WCAG 2.1 AA (Tab/Esc), Focus ring rõ nét, Skeleton loading thay cho spinner quay tròn, field-level error mapping cho form validation.
+  - **Sẵn sàng Chia sẻ với Mobile App (React Native Alignment):** Đồng bộ hóa các TypeScript DTOs (`ProductCatalogDto`, `ProductVariantDto`, `CapacitySnapshot`) sẵn sàng dùng chung giữa Web và Expo / React Native Mobile sau này.
+
+### Evidence
+
+Tài liệu hoàn chỉnh tại: [`docs/web-architecture.md`](file:///d:/FreshFlow/docs/web-architecture.md)
+
+### Blockers
+
+None.
+
+### Next action
+
+Hoàn thành trọn vẹn Sprint 2 và sẵn sàng bước sang Sprint 3 (Authentication, JWT/RBAC & Khởi tạo dự án React Web).
+
+
 
 
 
