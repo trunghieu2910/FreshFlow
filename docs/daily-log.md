@@ -429,7 +429,46 @@ None.
 
 ### Next action
 
-Hoàn thành trọn vẹn Sprint 2 và sẵn sàng bước sang Sprint 3 (Authentication, JWT/RBAC & Khởi tạo dự án React Web).
+Chuyển sang task tiếp theo trong Backlog: FF-01-07-1 (Ôn và kiểm tra kiến thức tuần 1).
+
+## Entry — FF-01-07-1
+
+**Date:** `2026-09-13`
+**Task:** `FF-01-07-1 — Ôn và kiểm tra kiến thức tuần 1`
+**Priority:** `Must`
+**Area:** `Review` / `Knowledge Retention`
+
+### Goal
+
+Áp dụng phương pháp Active Recall và kỹ thuật Feynman để ôn tập, hệ thống hóa toàn bộ kiến thức nền tảng của Tuần 1 (Khởi động, Domain F&B, Order State Machine, Clean OOP/DDD, Database boundary và Môi trường Docker/PostgreSQL), tự trả lời 15 câu hỏi kỹ thuật chuyên sâu, tự chấm điểm đạt $\ge 80\%$, và lập danh sách điểm cần củng cố đưa vào Tuần 2. Tuyệt đối không viết code tính năng mới.
+
+### Completed
+
+- **Tài liệu hóa Active Recall Tuần 1 (`docs/weekly-review/w01.md` và `docs/reviews/weekly-review-w01.md`):**
+  - **Nhóm 1 (REST & HTTP):** Phân tích sự khác nhau giữa `PUT` (thay thế toàn bộ) và `PATCH` (cập nhật cục bộ); phân loại Idempotent và Safe methods (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`); phân biệt 5 mã trạng thái HTTP kinh điển (`400`, `401`, `403`, `404`, `409`); giải thích tính phi trạng thái (Statelessness) và rủi ro khi lưu session trong RAM server.
+  - **Nhóm 2 (OOP & Clean Domain):** Phân biệt cốt lõi Entity (định danh bằng ID) vs Value Object (bất biến, định danh bằng giá trị thuộc tính); giải thích lý do ưu tiên Java `record` (zero boilerplate, immutable by default, thread-safe); phân tích lợi ích bất biến trong hệ thống tính toán giá và kế toán.
+  - **Nhóm 3 (Order State Machine):** Mô hình hóa vòng đời đơn hàng F&B bằng sơ đồ Mermaid (`CREATED` $\rightarrow$ `CONFIRMED` $\rightarrow$ `PREPARING` $\rightarrow$ `READY_FOR_PICKUP` $\rightarrow$ `OUT_FOR_DELIVERY` $\rightarrow$ `DELIVERED`); giải thích Guard Conditions và Invariants; chứng minh vì sao khách hàng tuyệt đối không được hủy đơn khi đang `OUT_FOR_DELIVERY`; chuẩn hóa xử lý lỗi chuyển trạng thái trái phép (`ORDER_ILLEGAL_STATE_TRANSITION` kèm HTTP `409 Conflict`).
+  - **Nhóm 4 (Database Boundaries):** Định nghĩa kiến trúc Modular Monolith và so sánh ưu/nhược điểm với Microservices/Spaghetti Monolith; giải thích quy tắc ranh giới package: vì sao module `order` không được `@ManyToOne Product` trực tiếp mà chỉ lưu `Long productId`; phân tích giá trị của việc tách biệt bảng cấu hình danh mục (`products`) và bảng snapshot lịch sử bất biến (`order_item_snapshots`).
+  - **Nhóm 5 (Môi trường & Công nghệ):** Lợi ích của Docker Compose trong việc đồng nhất môi trường và khởi tạo tức thì; vai trò của Flyway Migration và lý do cấm hoàn toàn `hibernate.ddl-auto=update` trên môi trường Production.
+- **Tự Chấm Điểm & Đánh giá Năng lực (Self-Scoring):**
+  - Đạt điểm số **14.5 / 15** (tương đương **96.7%**, vượt xa chỉ tiêu tối thiểu $\ge 80\%$).
+- **Lập Danh sách Củng cố Kiến thức chuyển sang Tuần 2:**
+  - Ghi nhận 3 trọng tâm kỹ thuật chuyên sâu để áp dụng trong Tuần 2: Xử lý triệt để N+1 Query bằng Batch Fetching, xây dựng JPA Specification lọc động nhiều tiêu chí, và tích hợp OpenAPI 3.0 / Swagger UI.
+- **Tuân thủ kỷ luật phát triển:**
+  - Không code tính năng mới, dành trọn vẹn thời gian củng cố nền tảng kiến thức.
+
+### Evidence
+
+Tài liệu hoàn chỉnh tại: [`docs/weekly-review/w01.md`](file:///d:/FreshFlow/docs/weekly-review/w01.md)
+
+### Blockers
+
+None.
+
+### Next action
+
+Đánh dấu hoàn thành task FF-01-07-1 trong Backlog và sẵn sàng chuyển giao các kỹ thuật vào Sprint tiếp theo.
+
 
 
 
