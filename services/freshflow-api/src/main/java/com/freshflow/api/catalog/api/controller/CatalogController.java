@@ -14,48 +14,22 @@ import com.freshflow.api.catalog.application.CatalogVariantService;
 import com.freshflow.api.catalog.application.query.ProductFilterCriteria;
 import com.freshflow.api.catalog.domain.InventoryMode;
 import com.freshflow.api.catalog.domain.Product;
-import com.freshflow.api.common.api.error.ApiErrorResponse;
-import com.freshflow.api.common.config.OpenApiConfig;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 /**
- * REST controller for the Catalog module.
+ * REST controller implementation for {@link CatalogApi}.
  *
- * <p>Merchant endpoints are scoped under {@code /api/v1/merchant/stores/{storeId}} and require
- * {@code X-User-Id} header for ownership verification. Public catalog endpoints are scoped under
- * {@code /api/v1/stores}.
+ * <p>Implements contract-first OpenAPI interface with business logic, authorization,
+ * and service delegation.
  */
 @RestController
-@RequestMapping("/api/v1")
-@Tag(name = "Catalog", description = "Endpoints for managing store product catalog and variants")
-public class CatalogController {
+public class CatalogController implements CatalogApi {
 
   private final CatalogService catalogService;
   private final CatalogVariantService variantService;
@@ -80,71 +54,21 @@ public class CatalogController {
   // Public -- store list / product catalog
   // -------------------------------------------------------------------------
 
-  @Operation(
-      summary = "List all active stores",
-      description = "Retrieves all active merchant stores available for ordering in FreshFlow.")
-  @ApiResponse(responseCode = "200", description = "List of active stores retrieved successfully")
-  @GetMapping("/stores")
+  @Override
   public ResponseEntity<List<?>> listStores() {
     return ResponseEntity.ok(catalogService.listStores());
   }
 
-  @Operation(
-      summary = "Browse store product catalog with pagination, search, and filters",
-      description =
-          "Queries active products in the store catalog with pagination, sorting, keyword search, "
-              + "category filter, variant size (M, L, STANDARD), inventory mode, and availability. "
-              + "Made-to-order variants with zero daily capacity return CAPACITY_EXHAUSTED (BR-08). "
-              + "Inactive stores, products, or categories are never returned (BR-01).")
-  @ApiResponses({
-    @ApiResponse(
-        responseCode = "200",
-        description = "Page of catalog products returned successfully"),
-    @ApiResponse(
-        responseCode = "400",
-        description = "Invalid filter or pagination parameters",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-    @ApiResponse(
-        responseCode = "404",
-        description = "Store not found or inactive",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-  })
-  @GetMapping("/stores/{storeId}/products")
+  @Override
   public ResponseEntity<Page<ProductCatalogDto>> listProducts(
-      @Parameter(description = "Store identifier", example = "1", required = true) @PathVariable
-          Long storeId,
-      @Parameter(
-              description =
-                  "Search keyword matched against product name, description, and variant SKU",
-              example = "tra")
-          @RequestParam(required = false)
-          String search,
-      @Parameter(description = "Filter by specific store category ID", example = "1")
-          @RequestParam(required = false)
-          Long storeCategoryId,
-      @Parameter(
-              description =
-                  "Filter by variant size ('M', 'L', 'STANDARD'). When numeric (e.g. '10'), Spring Data binds it as page size.",
-              example = "M")
-          @RequestParam(required = false)
-          String size,
-      @Parameter(
-              description =
-                  "Explicit variant size filter ('M', 'L', 'STANDARD') without size/page conflict",
-              example = "M")
-          @RequestParam(required = false)
-          String variantSize,
-      @Parameter(description = "Filter by inventory management mode", example = "MADE_TO_ORDER")
-          @RequestParam(required = false)
-          InventoryMode inventoryMode,
-      @Parameter(
-              description =
-                  "When true, returns only products that currently have at least one available variant",
-              example = "true")
-          @RequestParam(required = false)
-          Boolean availableOnly,
-      @ParameterObject @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC)
-          Pageable pageable) {
+      Long storeId,
+      String search,
+      Long storeCategoryId,
+      String size,
+      String variantSize,
+      InventoryMode inventoryMode,
+      Boolean availableOnly,
+      Pageable pageable) {
     String effectiveSize = resolveSizeFilter(size, variantSize);
     ProductFilterCriteria criteria =
         ProductFilterCriteria.publicCatalog(
@@ -163,23 +87,8 @@ public class CatalogController {
     return null;
   }
 
-  @Operation(
-      summary = "Get product details by ID",
-      description =
-          "Retrieves active product details and its variants by product ID within a store.")
-  @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Product details retrieved successfully"),
-    @ApiResponse(
-        responseCode = "404",
-        description = "Product or store not found or inactive",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-  })
-  @GetMapping("/stores/{storeId}/products/{productId}")
-  public ResponseEntity<ProductCatalogDto> getProduct(
-      @Parameter(description = "Store identifier", example = "1", required = true) @PathVariable
-          Long storeId,
-      @Parameter(description = "Product identifier", example = "1", required = true) @PathVariable
-          Long productId) {
+  @Override
+  public ResponseEntity<ProductCatalogDto> getProduct(Long storeId, Long productId) {
     Product product = catalogService.getProduct(productId);
     return ResponseEntity.ok(dtoMapper.toProductDto(product));
   }
@@ -188,34 +97,9 @@ public class CatalogController {
   // Merchant -- product management
   // -------------------------------------------------------------------------
 
-  @Operation(
-      summary = "Create a new product (Merchant)",
-      description =
-          "Creates a new product within merchant's store. Requires store ownership verification via X-User-Id header.",
-      security = @SecurityRequirement(name = OpenApiConfig.MERCHANT_USER_ID_HEADER))
-  @ApiResponses({
-    @ApiResponse(responseCode = "201", description = "Product created successfully"),
-    @ApiResponse(
-        responseCode = "400",
-        description = "Validation failed for request payload",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-    @ApiResponse(
-        responseCode = "403",
-        description = "Store access denied for actor user",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-    @ApiResponse(
-        responseCode = "404",
-        description = "Store or category not found",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-  })
-  @PostMapping("/merchant/stores/{storeId}/products")
+  @Override
   public ResponseEntity<ProductCatalogDto> createProduct(
-      @Parameter(description = "Store identifier", example = "1", required = true) @PathVariable
-          Long storeId,
-      @Parameter(description = "User ID of merchant owner", example = "2", required = true)
-          @RequestHeader("X-User-Id")
-          Long actorUserId,
-      @Valid @RequestBody CreateProductRequest request) {
+      Long storeId, Long actorUserId, CreateProductRequest request) {
     Product product =
         catalogService.createProduct(requestMapper.toCreateProductCommand(storeId, request));
     URI location =
@@ -226,66 +110,17 @@ public class CatalogController {
     return ResponseEntity.created(location).body(dtoMapper.toProductDto(product));
   }
 
-  @Operation(
-      summary = "Update product details (Merchant)",
-      description = "Updates editable fields of a product. Requires store ownership verification.",
-      security = @SecurityRequirement(name = OpenApiConfig.MERCHANT_USER_ID_HEADER))
-  @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Product updated successfully"),
-    @ApiResponse(
-        responseCode = "400",
-        description = "Validation failed for request payload",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-    @ApiResponse(
-        responseCode = "403",
-        description = "Store access denied for actor user",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-    @ApiResponse(
-        responseCode = "404",
-        description = "Product not found",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-  })
-  @PatchMapping("/merchant/stores/{storeId}/products/{productId}")
+  @Override
   public ResponseEntity<ProductCatalogDto> updateProduct(
-      @Parameter(description = "Store identifier", example = "1", required = true) @PathVariable
-          Long storeId,
-      @Parameter(description = "Product identifier", example = "1", required = true) @PathVariable
-          Long productId,
-      @Parameter(description = "User ID of merchant owner", example = "2", required = true)
-          @RequestHeader("X-User-Id")
-          Long actorUserId,
-      @Valid @RequestBody UpdateProductRequest request) {
+      Long storeId, Long productId, Long actorUserId, UpdateProductRequest request) {
     accessService.requireOwnedProduct(storeId, productId, actorUserId);
     Product product =
         catalogService.updateProduct(productId, requestMapper.toUpdateProductCommand(request));
     return ResponseEntity.ok(dtoMapper.toProductDto(product));
   }
 
-  @Operation(
-      summary = "Delete product (Merchant)",
-      description =
-          "Soft-deletes a product by marking it inactive. Requires store ownership verification.",
-      security = @SecurityRequirement(name = OpenApiConfig.MERCHANT_USER_ID_HEADER))
-  @ApiResponses({
-    @ApiResponse(responseCode = "204", description = "Product deleted successfully"),
-    @ApiResponse(
-        responseCode = "403",
-        description = "Store access denied for actor user",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-    @ApiResponse(
-        responseCode = "404",
-        description = "Product not found",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-  })
-  @DeleteMapping("/merchant/stores/{storeId}/products/{productId}")
-  public ResponseEntity<Void> deleteProduct(
-      @Parameter(description = "Store identifier", example = "1", required = true) @PathVariable
-          Long storeId,
-      @Parameter(description = "Product identifier", example = "1", required = true) @PathVariable
-          Long productId,
-      @Parameter(description = "User ID of merchant owner", example = "2", required = true)
-          @RequestHeader("X-User-Id")
-          Long actorUserId) {
+  @Override
+  public ResponseEntity<Void> deleteProduct(Long storeId, Long productId, Long actorUserId) {
     accessService.requireOwnedProduct(storeId, productId, actorUserId);
     catalogService.deleteProduct(productId);
     return ResponseEntity.noContent().build();
@@ -295,82 +130,20 @@ public class CatalogController {
   // Merchant -- product variant management
   // -------------------------------------------------------------------------
 
-  @Operation(
-      summary = "List all variants of a product (Merchant)",
-      description = "Lists all variants (including inactive) of a specific product.")
-  @ApiResponses({
-    @ApiResponse(
-        responseCode = "200",
-        description = "List of product variants returned successfully"),
-    @ApiResponse(
-        responseCode = "404",
-        description = "Store or product not found",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-  })
-  @GetMapping("/merchant/stores/{storeId}/products/{productId}/variants")
-  public ResponseEntity<List<ProductVariantDto>> listVariants(
-      @Parameter(description = "Store identifier", example = "1", required = true) @PathVariable
-          Long storeId,
-      @Parameter(description = "Product identifier", example = "1", required = true) @PathVariable
-          Long productId) {
+  @Override
+  public ResponseEntity<List<ProductVariantDto>> listVariants(Long storeId, Long productId) {
     return ResponseEntity.ok(variantService.list(storeId, productId));
   }
 
-  @Operation(
-      summary = "Get variant details by ID (Merchant)",
-      description = "Retrieves variant information including pricing, mode, and default capacity.")
-  @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Variant details retrieved successfully"),
-    @ApiResponse(
-        responseCode = "404",
-        description = "Variant not found",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-  })
-  @GetMapping("/merchant/stores/{storeId}/products/{productId}/variants/{variantId}")
+  @Override
   public ResponseEntity<ProductVariantDto> getVariant(
-      @Parameter(description = "Store identifier", example = "1", required = true) @PathVariable
-          Long storeId,
-      @Parameter(description = "Product identifier", example = "1", required = true) @PathVariable
-          Long productId,
-      @Parameter(description = "Variant identifier", example = "1", required = true) @PathVariable
-          Long variantId) {
+      Long storeId, Long productId, Long variantId) {
     return ResponseEntity.ok(variantService.get(storeId, productId, variantId));
   }
 
-  @Operation(
-      summary = "Create product variant (Merchant)",
-      description =
-          "Creates a new variant (size, price, inventory mode) for a product. Requires store ownership.",
-      security = @SecurityRequirement(name = OpenApiConfig.MERCHANT_USER_ID_HEADER))
-  @ApiResponses({
-    @ApiResponse(responseCode = "201", description = "Variant created successfully"),
-    @ApiResponse(
-        responseCode = "400",
-        description = "Validation failed for request payload",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-    @ApiResponse(
-        responseCode = "403",
-        description = "Store access denied for actor user",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-    @ApiResponse(
-        responseCode = "404",
-        description = "Store or product not found",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-    @ApiResponse(
-        responseCode = "409",
-        description = "Variant conflict (e.g. duplicate SKU)",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-  })
-  @PostMapping("/merchant/stores/{storeId}/products/{productId}/variants")
+  @Override
   public ResponseEntity<ProductVariantDto> createVariant(
-      @Parameter(description = "Store identifier", example = "1", required = true) @PathVariable
-          Long storeId,
-      @Parameter(description = "Product identifier", example = "1", required = true) @PathVariable
-          Long productId,
-      @Parameter(description = "User ID of merchant owner", example = "2", required = true)
-          @RequestHeader("X-User-Id")
-          Long actorUserId,
-      @Valid @RequestBody CreateProductVariantRequest request) {
+      Long storeId, Long productId, Long actorUserId, CreateProductVariantRequest request) {
     ProductVariantDto dto =
         variantService.create(
             storeId, productId, actorUserId, requestMapper.toCreateVariantCommand(request));
@@ -382,37 +155,13 @@ public class CatalogController {
     return ResponseEntity.created(location).body(dto);
   }
 
-  @Operation(
-      summary = "Update product variant (Merchant)",
-      description = "Updates fields of an existing variant. Requires store ownership verification.",
-      security = @SecurityRequirement(name = OpenApiConfig.MERCHANT_USER_ID_HEADER))
-  @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Variant updated successfully"),
-    @ApiResponse(
-        responseCode = "400",
-        description = "Validation failed for request payload",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-    @ApiResponse(
-        responseCode = "403",
-        description = "Store access denied for actor user",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-    @ApiResponse(
-        responseCode = "404",
-        description = "Variant not found",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-  })
-  @PatchMapping("/merchant/stores/{storeId}/products/{productId}/variants/{variantId}")
+  @Override
   public ResponseEntity<ProductVariantDto> updateVariant(
-      @Parameter(description = "Store identifier", example = "1", required = true) @PathVariable
-          Long storeId,
-      @Parameter(description = "Product identifier", example = "1", required = true) @PathVariable
-          Long productId,
-      @Parameter(description = "Variant identifier", example = "1", required = true) @PathVariable
-          Long variantId,
-      @Parameter(description = "User ID of merchant owner", example = "2", required = true)
-          @RequestHeader("X-User-Id")
-          Long actorUserId,
-      @Valid @RequestBody UpdateProductVariantRequest request) {
+      Long storeId,
+      Long productId,
+      Long variantId,
+      Long actorUserId,
+      UpdateProductVariantRequest request) {
     ProductVariantDto dto =
         variantService.update(
             storeId,
@@ -423,33 +172,9 @@ public class CatalogController {
     return ResponseEntity.ok(dto);
   }
 
-  @Operation(
-      summary = "Delete product variant (Merchant)",
-      description =
-          "Deletes or deactivates a product variant. Requires store ownership verification.",
-      security = @SecurityRequirement(name = OpenApiConfig.MERCHANT_USER_ID_HEADER))
-  @ApiResponses({
-    @ApiResponse(responseCode = "204", description = "Variant deleted successfully"),
-    @ApiResponse(
-        responseCode = "403",
-        description = "Store access denied for actor user",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-    @ApiResponse(
-        responseCode = "404",
-        description = "Variant not found",
-        content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-  })
-  @DeleteMapping("/merchant/stores/{storeId}/products/{productId}/variants/{variantId}")
+  @Override
   public ResponseEntity<Void> deleteVariant(
-      @Parameter(description = "Store identifier", example = "1", required = true) @PathVariable
-          Long storeId,
-      @Parameter(description = "Product identifier", example = "1", required = true) @PathVariable
-          Long productId,
-      @Parameter(description = "Variant identifier", example = "1", required = true) @PathVariable
-          Long variantId,
-      @Parameter(description = "User ID of merchant owner", example = "2", required = true)
-          @RequestHeader("X-User-Id")
-          Long actorUserId) {
+      Long storeId, Long productId, Long variantId, Long actorUserId) {
     variantService.delete(storeId, productId, variantId, actorUserId);
     return ResponseEntity.noContent().build();
   }
