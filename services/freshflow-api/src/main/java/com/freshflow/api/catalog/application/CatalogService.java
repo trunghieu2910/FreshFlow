@@ -32,6 +32,8 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -40,6 +42,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor // lombok sẽ sinh ra contructor cho tất cả các field final, giúp inject dependency
 public class CatalogService {
   private final UserRepository userRepository;
   private final StoreRepository storeRepository;
@@ -48,23 +51,6 @@ public class CatalogService {
   private final ProductRepository productRepository;
   private final CatalogCapacityService capacityService;
   private final CatalogDtoMapper dtoMapper;
-
-  public CatalogService(
-      UserRepository userRepository,
-      StoreRepository storeRepository,
-      CategoryRepository categoryRepository,
-      StoreCategoryRepository storeCategoryRepository,
-      ProductRepository productRepository,
-      CatalogCapacityService capacityService,
-      CatalogDtoMapper dtoMapper) {
-    this.userRepository = userRepository;
-    this.storeRepository = storeRepository;
-    this.categoryRepository = categoryRepository;
-    this.storeCategoryRepository = storeCategoryRepository;
-    this.productRepository = productRepository;
-    this.capacityService = capacityService;
-    this.dtoMapper = dtoMapper;
-  }
 
   @Transactional
   public Store createStore(CreateStoreCommand command) {

@@ -8,20 +8,17 @@ import com.freshflow.api.catalog.domain.Store;
 import com.freshflow.api.catalog.infrastructure.persistence.ProductRepository;
 import com.freshflow.api.catalog.infrastructure.persistence.StoreRepository;
 import java.util.Objects;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor // lombok sẽ sinh ra contructor cho tất cả các field final, giúp inject dependency
 public class CatalogAccessService {
   private final StoreRepository storeRepository;
   private final ProductRepository productRepository;
-
-  public CatalogAccessService(
-      StoreRepository storeRepository, ProductRepository productRepository) {
-    this.storeRepository = storeRepository;
-    this.productRepository = productRepository;
-  }
 
   public Store requireOwnedStore(Long storeId, Long actorUserId) {
     if (actorUserId == null || actorUserId <= 0) {

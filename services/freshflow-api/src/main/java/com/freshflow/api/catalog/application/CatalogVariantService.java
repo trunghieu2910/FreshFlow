@@ -15,24 +15,18 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor // lombok sẽ sinh ra contructor cho tất cả các field final, giúp inject dependency
 public class CatalogVariantService {
   private final CatalogAccessService accessService;
   private final ProductVariantRepository variantRepository;
   private final CatalogDtoMapper mapper;
-
-  public CatalogVariantService(
-      CatalogAccessService accessService,
-      ProductVariantRepository variantRepository,
-      CatalogDtoMapper mapper) {
-    this.accessService = accessService;
-    this.variantRepository = variantRepository;
-    this.mapper = mapper;
-  }
 
   @Transactional
   public ProductVariantDto create(

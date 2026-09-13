@@ -16,9 +16,12 @@ import com.freshflow.api.catalog.domain.InventoryMode;
 import com.freshflow.api.catalog.domain.Product;
 import java.net.URI;
 import java.util.List;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -29,6 +32,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
  * and service delegation.
  */
 @RestController
+@CrossOrigin(origins = "*")
+@RequiredArgsConstructor // lombok sẽ sinh ra contructor cho tất cả các field final, giúp inject dependency
 public class CatalogController implements CatalogApi {
 
   private final CatalogService catalogService;
@@ -37,20 +42,7 @@ public class CatalogController implements CatalogApi {
   private final CatalogDtoMapper dtoMapper;
   private final CatalogRequestMapper requestMapper;
 
-  public CatalogController(
-      CatalogService catalogService,
-      CatalogVariantService variantService,
-      CatalogAccessService accessService,
-      CatalogDtoMapper dtoMapper,
-      CatalogRequestMapper requestMapper) {
-    this.catalogService = catalogService;
-    this.variantService = variantService;
-    this.accessService = accessService;
-    this.dtoMapper = dtoMapper;
-    this.requestMapper = requestMapper;
-  }
-
-  // -------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
   // Public -- store list / product catalog
   // -------------------------------------------------------------------------
 
