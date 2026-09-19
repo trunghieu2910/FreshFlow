@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { MerchantLayout } from './MerchantLayout';
+import { ErrorBoundary } from '@/components/ui';
 import { useAuth } from '@/context';
 
 export const AppLayout: React.FC = () => {
@@ -82,7 +83,12 @@ export const AppLayout: React.FC = () => {
       breadcrumbs={breadcrumbs}
       onLogout={handleLogout}
     >
-      <Outlet />
+      <ErrorBoundary
+        title="Không thể hiển thị trang này"
+        description="Đã có sự cố kết xuất trong trang. Menu thanh điều hướng và thông tin cửa hàng vẫn an toàn. Bạn có thể thử lại hoặc chuyển sang mục khác."
+      >
+        <Outlet />
+      </ErrorBoundary>
     </MerchantLayout>
   );
 };

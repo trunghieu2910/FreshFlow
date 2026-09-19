@@ -11,21 +11,23 @@ import {
   Button,
 } from '@/components/ui';
 import { formatVND, getCapacityStatusInfo } from '../utils/formatters';
-import { Utensils, Edit3, Trash2 } from 'lucide-react';
+import { Utensils, Edit3, Trash2, Eye, EyeOff } from 'lucide-react';
 
 export interface ProductCatalogTableProps {
   products: ProductCatalogDto[];
   onEdit?: (product: ProductCatalogDto) => void;
   onDelete?: (productId: number) => void;
+  onToggleActive?: (product: ProductCatalogDto) => void;
 }
 
 export const ProductCatalogTable: React.FC<ProductCatalogTableProps> = ({
   products,
   onEdit,
   onDelete,
+  onToggleActive,
 }) => {
   return (
-    <Table>
+    <Table className="min-w-[720px]">
       <TableHeader>
         <TableRow>
           <TableHead className="w-16">ID</TableHead>
@@ -46,16 +48,21 @@ export const ProductCatalogTable: React.FC<ProductCatalogTableProps> = ({
           const isFullyUnavailable =
             !product.active || product.variants.every((v) => !v.available);
 
-          const statusInfo = getCapacityStatusInfo(
-            isFullyUnavailable
-              ? 'MARKED_UNAVAILABLE'
-              : hasExhaustedVariant
-              ? 'CAPACITY_EXHAUSTED'
-              : primaryVariant?.availabilityStatus || 'AVAILABLE'
-          );
+          const statusInfo = !product.active
+            ? { label: 'Đã ẩn mềm (is_active: false)', variant: 'danger' as const }
+            : getCapacityStatusInfo(
+                isFullyUnavailable
+                  ? 'MARKED_UNAVAILABLE'
+                  : hasExhaustedVariant
+                  ? 'CAPACITY_EXHAUSTED'
+                  : primaryVariant?.availabilityStatus || 'AVAILABLE'
+              );
 
           return (
-            <TableRow key={product.id}>
+            <TableRow
+              key={product.id}
+              className={!product.active ? 'bg-slate-50/75 opacity-80' : ''}
+            >
               {/* Product ID */}
               <TableCell className="font-mono text-xs text-slate-500 font-semibold">
                 #{product.id}
@@ -82,9 +89,16 @@ export const ProductCatalogTable: React.FC<ProductCatalogTableProps> = ({
                   </div>
 
                   <div className="min-w-0">
-                    <span className="block font-semibold text-slate-900 text-sm truncate">
-                      {product.name}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-slate-900 text-sm truncate">
+                        {product.name}
+                      </span>
+                      {!product.active && (
+                        <span className="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-bold">
+                          Ẩn
+                        </span>
+                      )}
+                    </div>
                     {product.description && (
                       <span className="block text-xs text-slate-500 truncate max-w-xs sm:max-w-sm">
                         {product.description}
@@ -101,16 +115,32 @@ export const ProductCatalogTable: React.FC<ProductCatalogTableProps> = ({
                     product.variants.map((v) => (
                       <span
                         key={v.id}
-                        className="inline-flex items-center gap-1 rounded-md bg-slate-100 border border-slate-200/80 px-2 py-0.5 text-xs text-slate-700 font-mono"
+                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-mono ${
+                          !v.active
+                            ? 'bg-slate-200/70 border-slate-300 text-slate-500 line-through'
+                            : !v.available
+                            ? 'bg-amber-50 border-amber-300 text-amber-900'
+                            : 'bg-slate-100 border-slate-200/80 text-slate-700'
+                        }`}
+                        title={
+                          !v.active
+                            ? 'Biến thể đã ẩn mềm'
+                            : !v.available
+                            ? 'Biến thể tạm ngưng bán'
+                            : 'Đang mở bán'
+                        }
                       >
                         <span className="font-semibold text-slate-900">
                           {v.size ? `Size ${v.size}` : 'STANDARD'}:
                         </span>
                         <span className="text-emerald-700 font-bold">{formatVND(v.price)}</span>
+                        {!v.available && v.active && (
+                          <span className="text-[9px] text-amber-800 font-bold">(Ngưng)</span>
+                        )}
                       </span>
                     ))
                   ) : (
-                    <span className="text-xs text-slate-400 italic">Chưa có biến thể</span>
+                    <span className="text-xs text-slate-500 italic">Chưa có biến thể</span>
                   )}
                 </div>
               </TableCell>
@@ -122,7 +152,7 @@ export const ProductCatalogTable: React.FC<ProductCatalogTableProps> = ({
                     <span className="block text-xs font-semibold text-slate-800 tabular-nums">
                       Còn {primaryVariant.capacity.remaining} suất
                     </span>
-                    <span className="block text-[10px] text-slate-400">
+                    <span className="block text-[10px] text-slate-500">
                       Định mức: {primaryVariant.dailyCapacityDefault || 100} / ngày
                     </span>
                   </div>
@@ -145,6 +175,34 @@ export const ProductCatalogTable: React.FC<ProductCatalogTableProps> = ({
               {/* Actions */}
               <TableCell className="text-right">
                 <div className="inline-flex items-center gap-1.5 justify-end">
+                  {/* Quick Toggle Active Soft Hide */}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className={
+                      product.active
+                        ? 'text-slate-600 hover:text-rose-600'
+                        : 'text-emerald-600 hover:text-emerald-700'
+                    }
+                    onClick={() => onToggleActive?.(product)}
+                    aria-label={
+                      product.active
+                        ? `Ẩn mềm món ${product.name}`
+                        : `Mở lại món ${product.name}`
+                    }
+                    title={
+                      product.active
+                        ? 'Ẩn mềm món ăn khỏi thực đơn công khai'
+                        : 'Mở lại món ăn trên thực đơn'
+                    }
+                  >
+                    {product.active ? (
+                      <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+                    ) : (
+                      <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+                    )}
+                  </Button>
+
                   <Button
                     size="sm"
                     variant="outline"
@@ -160,6 +218,7 @@ export const ProductCatalogTable: React.FC<ProductCatalogTableProps> = ({
                     className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
                     onClick={() => onDelete?.(product.id)}
                     aria-label={`Xóa món ${product.name}`}
+                    title="Ẩn mềm món ăn khỏi thực đơn (Không hard delete)"
                   >
                     <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   </Button>

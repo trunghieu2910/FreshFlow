@@ -115,6 +115,7 @@ export interface CreateProductVariantRequest {
   autoAcceptOverride?: boolean;
   maxQuantityPerOrder?: number;
   dailyCapacityDefault?: number;
+  available?: boolean;
 }
 
 /**
@@ -150,3 +151,115 @@ export interface PaginationParams {
   size?: number;
   sort?: string;
 }
+
+/**
+ * Size selector options for product variants
+ */
+export type VariantSizeType = 'STANDARD' | 'M' | 'L' | 'CUSTOM';
+
+/**
+ * Form state model for an individual product variant
+ */
+export interface VariantFormData {
+  id: string; // client-side unique id for key mapping
+  name: string;
+  sizeType: VariantSizeType;
+  customSize?: string;
+  price: number | '';
+  inventoryMode: InventoryMode;
+  autoAcceptOverride: boolean;
+  maxQuantityPerOrder: number | '';
+  dailyCapacityDefault: number | '';
+  available: boolean;
+}
+
+/**
+ * Form state model for creating a product with nested variants
+ */
+export interface ProductCreateFormData {
+  storeCategoryId: number;
+  name: string;
+  description: string;
+  imageUrl: string;
+  active: boolean;
+  variants: VariantFormData[];
+}
+
+/**
+ * Store category representation with soft active status
+ */
+export interface StoreCategoryDto {
+  id: number;
+  storeId: number;
+  name: string;
+  description?: string | null;
+  isActive: boolean;
+  displayOrder: number;
+}
+
+/**
+ * Form state model for editing an existing product and its variants (PATCH semantics)
+ */
+export interface ProductEditFormData {
+  id: number;
+  storeCategoryId: number;
+  name: string;
+  description: string;
+  imageUrl: string;
+  active: boolean;
+  variants: (VariantFormData & {
+    variantId?: number;
+    active: boolean; // soft delete / hide flag for variant
+  })[];
+}
+
+/**
+ * Cart item model for tracking customer cart with dependent availability
+ */
+export interface CartItem {
+  id: string;
+  productId: number;
+  productName: string;
+  variantId: number;
+  variantName: string;
+  size: string | null;
+  price: number;
+  quantity: number;
+  storeCategoryId: number;
+  imageUrl?: string | null;
+}
+
+/**
+ * Evaluated cart item with dependent availability status
+ */
+export interface EvaluatedCartItem extends CartItem {
+  isAvailable: boolean;
+  unavailableReason?: string;
+}
+
+/**
+ * Cart state model
+ */
+export interface CartState {
+  items: CartItem[];
+  storeId: number;
+}
+
+/**
+ * Historical order item model for verifying soft delete preservation
+ */
+export interface OrderHistoryItem {
+  orderId: string;
+  orderTime: string;
+  productId: number;
+  productName: string;
+  variantId: number;
+  variantName: string;
+  size: string | null;
+  unitPrice: number;
+  quantity: number;
+  totalPrice: number;
+  storeCategoryId: number;
+}
+
+
