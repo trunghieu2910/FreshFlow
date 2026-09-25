@@ -262,4 +262,85 @@ export interface OrderHistoryItem {
   storeCategoryId: number;
 }
 
+/**
+ * Order status in state machine lifecycle
+ */
+export type OrderStatus =
+  | 'AWAITING_MERCHANT_CONFIRMATION'
+  | 'AWAITING_PAYMENT'
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'SHIPPING'
+  | 'DELIVERY_FAILED'
+  | 'DISPUTED'
+  | 'COMPLETED'
+  | 'CANCELLED';
+
+/**
+ * Merchant Dashboard Real KPI Summary
+ */
+export interface MerchantDashboardSummary {
+  activeProductsCount: number;
+  totalProductsCount: number;
+  pendingOrdersCount: number;
+  todayOrdersCount: number;
+  todayRevenue: number;
+  operationalStatus: string;
+  avgPreparationMinutes: number;
+}
+
+/**
+ * Order line item snapshot
+ */
+export interface MerchantOrderItem {
+  id: number;
+  productName: string;
+  variantName: string;
+  unitPrice: number;
+  quantity: number;
+  lineTotal: number;
+}
+
+/**
+ * Order summary for merchant table listing
+ */
+export interface MerchantOrderSummary {
+  id: number;
+  orderNumber: string;
+  customerName: string;
+  customerPhoneMasked: string;
+  itemsSummary: string;
+  totalAmount: number;
+  status: OrderStatus;
+  statusLabel: string;
+  paymentMethod: string;
+  createdAt: string;
+}
+
+/**
+ * Order detail representation for modal / inspection
+ */
+export interface MerchantOrderDetail {
+  id: number;
+  orderNumber: string;
+  customerName: string;
+  customerPhoneMasked: string;
+  status: OrderStatus;
+  statusLabel: string;
+  paymentMethod: string;
+  merchantAcceptanceStatus: string;
+  subtotal: number;
+  deliveryFee: number;
+  discountAmount: number;
+  totalAmount: number;
+  cancelReason?: string | null;
+  createdAt: string;
+  acceptedAt?: string | null;
+  processingAt?: string | null;
+  completedAt?: string | null;
+  cancelledAt?: string | null;
+  items: MerchantOrderItem[];
+}
+
+
 

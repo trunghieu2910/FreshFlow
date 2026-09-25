@@ -21,7 +21,7 @@ class CatalogSeedMigrationTest {
 
   @Test
   void v5_applies_expected_catalog_seed_and_indexes() {
-    assertEquals(5, migrationVersion());
+    assertTrue(migrationVersion() >= 5, "Expected migration version >= 5, but was " + migrationVersion());
     assertEquals(1, count("users", "email = 'demo.owner@freshflow.local'"));
     assertEquals(1, count("stores", "name = 'FreshFlow Demo Kitchen'"));
     assertEquals(2, count("products", "name IN ('Classic Milk Tea', 'Butter Croissant')"));

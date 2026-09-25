@@ -11,4 +11,8 @@ public interface ProductRepository
   List<Product> findAllByStore_IdOrderByNameAsc(Long storeId);
 
   Optional<Product> findByIdAndStore_Id(Long productId, Long storeId);
+
+  long countByStore_IdAndIsActiveTrue(Long storeId);
+
+  long countByStore_Id(Long storeId);
 }

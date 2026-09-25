@@ -28,6 +28,28 @@ public class ApiExceptionHandler {
         HttpStatus.NOT_FOUND, exception.getCode(), exception.getMessage(), request, List.of());
   }
 
+  @ExceptionHandler(com.freshflow.api.order.application.exception.OrderNotFoundException.class)
+  ResponseEntity<ApiErrorResponse> handleOrderNotFound(
+      com.freshflow.api.order.application.exception.OrderNotFoundException exception,
+      HttpServletRequest request) {
+    return response(
+        HttpStatus.NOT_FOUND, exception.getCode(), exception.getMessage(), request, List.of());
+  }
+
+  @ExceptionHandler(com.freshflow.api.order.application.exception.OrderRuleViolationException.class)
+  ResponseEntity<ApiErrorResponse> handleOrderRule(
+      com.freshflow.api.order.application.exception.OrderRuleViolationException exception,
+      HttpServletRequest request) {
+    HttpStatus status =
+        switch (exception.getErrorCode()) {
+          case ORDER_INVALID_TRANSITION -> HttpStatus.CONFLICT;
+          case ORDER_ACCESS_DENIED -> HttpStatus.FORBIDDEN;
+          default -> HttpStatus.BAD_REQUEST;
+        };
+    return response(
+        status, exception.getCode(), exception.getMessage(), request, List.of());
+  }
+
   @ExceptionHandler(CatalogRuleViolationException.class)
   ResponseEntity<ApiErrorResponse> handleRule(
       CatalogRuleViolationException exception, HttpServletRequest request) {
