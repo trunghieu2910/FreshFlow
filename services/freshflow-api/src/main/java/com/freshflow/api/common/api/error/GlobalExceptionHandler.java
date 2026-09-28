@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
-public class ApiExceptionHandler {
+public class GlobalExceptionHandler {
 
   @ExceptionHandler(CatalogNotFoundException.class)
   ResponseEntity<ApiErrorResponse> handleNotFound(
