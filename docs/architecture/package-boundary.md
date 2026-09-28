@@ -83,28 +83,32 @@ Sơ đồ trên biểu diễn khả năng dùng shared type ở mức khái ni�
 
 Order không được phụ thuộc trực tiếp vào implementation nội bộ của catalog để đọc lại giá hoặc tên sản phẩm sau khi order đã được tạo. Order phải sử dụng snapshot đã lưu.
 
-## 6. Cấu trúc package mục tiêu cho module đầy đủ
+## 6. Cấu trúc package mục tiêu cho module đầy đủ (Theo ADR-003)
 
-Khi module phát triển, package con được mở rộng theo cấu trúc:
+Theo quyết định tại [ADR-003](../adr/ADR-003-three-tier-architecture.md), FreshFlow chuẩn hoá cấu trúc bên trong mỗi module sang mô hình 3 lớp chuẩn Spring Boot tinh gọn nhằm giảm boilerplate code:
 
 ```text
 com.freshflow.api.<module>
-├── api
-├── application
-├── domain
-└── infrastructure
+├── controller
+├── dto
+├── service
+├── repository
+└── model
 ```
 
 Ý nghĩa các package:
 
-| Package | Trách nhiệm |
-|---|---|
-| `api` | REST controller, request/response DTO và public inbound adapter |
-| `application` | Use case, command, query và transaction orchestration |
-| `domain` | Entity, value object, domain service và business rule |
-| `infrastructure` | JPA repository, external adapter và technical implementation |
+| Package | Trách nhiệm | Thành phần chính |
+|---|---|---|
+| `controller` | Lớp 1: Presentation & Web | REST controller (`CatalogController`), API interface contract |
+| `dto` | Data Transfer Objects | Request DTO (`CreateProductRequest`), Response DTO (`ProductCatalogDto`), Mappers |
+| `service` | Lớp 2: Business Logic | Services (`CatalogService`), Transaction orchestration, Business Exceptions |
+| `repository` | Lớp 3: Data Access | Spring Data JPA Repositories (`ProductRepository`), JPA Specifications |
+| `model` | Domain Model & Persistence | JPA Entities (`Product`, `Store`), Enums (`InventoryMode`), Value Objects |
 
-Không tạo đầy đủ các package con khi chưa có code thực tế. Chỉ thêm package khi module có nhu cầu để tránh tạo cấu trúc rỗng không có ý nghĩa.
+Quy tắc ranh giới liên module:
+- Module `order` khi cần tương tác với `catalog` chỉ được gọi thông qua public service (`catalog.service.CatalogService`), **tuyệt đối không** inject trực tiếp `catalog.repository.ProductRepository`.
+
 
 ## 7. Quy tắc đặt class
 

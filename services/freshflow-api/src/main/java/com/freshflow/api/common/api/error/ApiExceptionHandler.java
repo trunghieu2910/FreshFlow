@@ -1,8 +1,10 @@
 package com.freshflow.api.common.api.error;
 
-import com.freshflow.api.catalog.application.exception.CatalogErrorCode;
-import com.freshflow.api.catalog.application.exception.CatalogNotFoundException;
-import com.freshflow.api.catalog.application.exception.CatalogRuleViolationException;
+import com.freshflow.api.catalog.service.exception.CatalogErrorCode;
+import com.freshflow.api.catalog.service.exception.CatalogNotFoundException;
+import com.freshflow.api.catalog.service.exception.CatalogRuleViolationException;
+import com.freshflow.api.order.service.exception.OrderNotFoundException;
+import com.freshflow.api.order.service.exception.OrderRuleViolationException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
@@ -28,26 +30,23 @@ public class ApiExceptionHandler {
         HttpStatus.NOT_FOUND, exception.getCode(), exception.getMessage(), request, List.of());
   }
 
-  @ExceptionHandler(com.freshflow.api.order.application.exception.OrderNotFoundException.class)
+  @ExceptionHandler(OrderNotFoundException.class)
   ResponseEntity<ApiErrorResponse> handleOrderNotFound(
-      com.freshflow.api.order.application.exception.OrderNotFoundException exception,
-      HttpServletRequest request) {
+      OrderNotFoundException exception, HttpServletRequest request) {
     return response(
         HttpStatus.NOT_FOUND, exception.getCode(), exception.getMessage(), request, List.of());
   }
 
-  @ExceptionHandler(com.freshflow.api.order.application.exception.OrderRuleViolationException.class)
+  @ExceptionHandler(OrderRuleViolationException.class)
   ResponseEntity<ApiErrorResponse> handleOrderRule(
-      com.freshflow.api.order.application.exception.OrderRuleViolationException exception,
-      HttpServletRequest request) {
+      OrderRuleViolationException exception, HttpServletRequest request) {
     HttpStatus status =
         switch (exception.getErrorCode()) {
           case ORDER_INVALID_TRANSITION -> HttpStatus.CONFLICT;
           case ORDER_ACCESS_DENIED -> HttpStatus.FORBIDDEN;
           default -> HttpStatus.BAD_REQUEST;
         };
-    return response(
-        status, exception.getCode(), exception.getMessage(), request, List.of());
+    return response(status, exception.getCode(), exception.getMessage(), request, List.of());
   }
 
   @ExceptionHandler(CatalogRuleViolationException.class)
