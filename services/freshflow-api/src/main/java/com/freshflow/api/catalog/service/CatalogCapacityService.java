@@ -1,7 +1,7 @@
 package com.freshflow.api.catalog.service;
 
-import com.freshflow.api.catalog.dto.CapacitySnapshot;
-import com.freshflow.api.catalog.model.InventoryMode;
+import com.freshflow.api.catalog.dto.response.CapacitySnapshot;
+import com.freshflow.api.catalog.enums.InventoryMode;
 import com.freshflow.api.catalog.model.ProductVariant;
 import java.time.LocalDate;
 import java.util.HashMap;

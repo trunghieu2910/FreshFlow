@@ -4,9 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.freshflow.api.catalog.dto.ProductFilterCriteria;
+import com.freshflow.api.catalog.dto.request.ProductFilterCriteria;
+import com.freshflow.api.catalog.enums.*;
+import com.freshflow.api.catalog.enums.InventoryMode;
 import com.freshflow.api.catalog.model.Category;
-import com.freshflow.api.catalog.model.InventoryMode;
 import com.freshflow.api.catalog.model.Product;
 import com.freshflow.api.catalog.model.ProductVariant;
 import com.freshflow.api.catalog.model.Store;

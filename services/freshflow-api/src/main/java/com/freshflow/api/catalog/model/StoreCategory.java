@@ -1,5 +1,6 @@
 package com.freshflow.api.catalog.model;
 
+import com.freshflow.api.catalog.enums.*;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.time.OffsetDateTime;

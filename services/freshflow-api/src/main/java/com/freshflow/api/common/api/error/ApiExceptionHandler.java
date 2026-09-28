@@ -1,10 +1,10 @@
 package com.freshflow.api.common.api.error;
 
-import com.freshflow.api.catalog.service.exception.CatalogErrorCode;
-import com.freshflow.api.catalog.service.exception.CatalogNotFoundException;
-import com.freshflow.api.catalog.service.exception.CatalogRuleViolationException;
-import com.freshflow.api.order.service.exception.OrderNotFoundException;
-import com.freshflow.api.order.service.exception.OrderRuleViolationException;
+import com.freshflow.api.catalog.exception.CatalogErrorCode;
+import com.freshflow.api.catalog.exception.CatalogNotFoundException;
+import com.freshflow.api.catalog.exception.CatalogRuleViolationException;
+import com.freshflow.api.order.exception.OrderNotFoundException;
+import com.freshflow.api.order.exception.OrderRuleViolationException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;

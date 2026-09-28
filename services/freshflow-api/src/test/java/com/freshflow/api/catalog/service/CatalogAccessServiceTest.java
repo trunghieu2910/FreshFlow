@@ -7,14 +7,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.freshflow.api.catalog.exception.CatalogErrorCode;
+import com.freshflow.api.catalog.exception.CatalogNotFoundException;
+import com.freshflow.api.catalog.exception.CatalogRuleViolationException;
 import com.freshflow.api.catalog.model.Product;
 import com.freshflow.api.catalog.model.Store;
 import com.freshflow.api.catalog.model.User;
 import com.freshflow.api.catalog.repository.ProductRepository;
 import com.freshflow.api.catalog.repository.StoreRepository;
-import com.freshflow.api.catalog.service.exception.CatalogErrorCode;
-import com.freshflow.api.catalog.service.exception.CatalogNotFoundException;
-import com.freshflow.api.catalog.service.exception.CatalogRuleViolationException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.freshflow.api.catalog.enums.*;
 import com.freshflow.api.catalog.model.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;

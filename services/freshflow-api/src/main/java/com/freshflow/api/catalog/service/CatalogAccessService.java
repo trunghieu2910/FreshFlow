@@ -1,12 +1,12 @@
 package com.freshflow.api.catalog.service;
 
+import com.freshflow.api.catalog.exception.CatalogErrorCode;
+import com.freshflow.api.catalog.exception.CatalogNotFoundException;
+import com.freshflow.api.catalog.exception.CatalogRuleViolationException;
 import com.freshflow.api.catalog.model.Product;
 import com.freshflow.api.catalog.model.Store;
 import com.freshflow.api.catalog.repository.ProductRepository;
 import com.freshflow.api.catalog.repository.StoreRepository;
-import com.freshflow.api.catalog.service.exception.CatalogErrorCode;
-import com.freshflow.api.catalog.service.exception.CatalogNotFoundException;
-import com.freshflow.api.catalog.service.exception.CatalogRuleViolationException;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -1,10 +1,10 @@
 package com.freshflow.api.order.controller;
 
-import com.freshflow.api.order.dto.MerchantDashboardSummaryDto;
-import com.freshflow.api.order.dto.MerchantOrderDetailDto;
-import com.freshflow.api.order.dto.MerchantOrderSummaryDto;
+import com.freshflow.api.order.dto.request.RejectOrderRequest;
+import com.freshflow.api.order.dto.response.MerchantDashboardSummaryDto;
+import com.freshflow.api.order.dto.response.MerchantOrderDetailDto;
+import com.freshflow.api.order.dto.response.MerchantOrderSummaryDto;
 import com.freshflow.api.order.service.OrderService;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -64,9 +64,9 @@ public class MerchantOrderController {
   public ResponseEntity<MerchantOrderDetailDto> rejectOrder(
       @PathVariable Long storeId,
       @PathVariable Long orderId,
-      @RequestBody(required = false) Map<String, String> body,
+      @RequestBody(required = false) RejectOrderRequest request,
       @RequestHeader(value = "X-User-Id", required = false) Long actorUserId) {
-    String reason = body != null ? body.get("reason") : null;
+    String reason = request != null ? request.reason() : null;
     MerchantOrderDetailDto updated =
         orderService.rejectOrder(storeId, orderId, reason, actorUserId);
     return ResponseEntity.ok(updated);

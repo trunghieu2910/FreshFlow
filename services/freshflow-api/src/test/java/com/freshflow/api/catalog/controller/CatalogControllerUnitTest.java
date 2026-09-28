@@ -15,54 +15,60 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.freshflow.api.catalog.dto.AvailabilityStatus;
-import com.freshflow.api.catalog.dto.CatalogDtoMapper;
-import com.freshflow.api.catalog.dto.CreateProductRequest;
-import com.freshflow.api.catalog.dto.CreateProductVariantRequest;
-import com.freshflow.api.catalog.dto.ProductCatalogDto;
-import com.freshflow.api.catalog.dto.ProductFilterCriteria;
-import com.freshflow.api.catalog.dto.ProductVariantDto;
-import com.freshflow.api.catalog.dto.UpdateProductRequest;
-import com.freshflow.api.catalog.model.InventoryMode;
+import com.freshflow.api.catalog.dto.request.CreateProductRequest;
+import com.freshflow.api.catalog.dto.request.CreateProductVariantRequest;
+import com.freshflow.api.catalog.dto.request.ProductFilterCriteria;
+import com.freshflow.api.catalog.dto.request.UpdateProductRequest;
+import com.freshflow.api.catalog.dto.response.ProductCatalogDto;
+import com.freshflow.api.catalog.dto.response.ProductVariantDto;
+import com.freshflow.api.catalog.enums.AvailabilityStatus;
+import com.freshflow.api.catalog.enums.InventoryMode;
+import com.freshflow.api.catalog.exception.CatalogErrorCode;
+import com.freshflow.api.catalog.exception.CatalogNotFoundException;
+import com.freshflow.api.catalog.exception.CatalogRuleViolationException;
+import com.freshflow.api.catalog.mapper.CatalogDtoMapper;
 import com.freshflow.api.catalog.model.Product;
 import com.freshflow.api.catalog.service.CatalogAccessService;
 import com.freshflow.api.catalog.service.CatalogService;
 import com.freshflow.api.catalog.service.CatalogVariantService;
-import com.freshflow.api.catalog.service.exception.CatalogErrorCode;
-import com.freshflow.api.catalog.service.exception.CatalogNotFoundException;
-import com.freshflow.api.catalog.service.exception.CatalogRuleViolationException;
+import com.freshflow.api.common.api.error.ApiExceptionHandler;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@ExtendWith(MockitoExtension.class)
 class CatalogControllerUnitTest {
 
-  @Autowired private WebApplicationContext wac;
-  @Autowired private ObjectMapper objectMapper;
+  @Mock private CatalogService catalogService;
+  @Mock private CatalogVariantService variantService;
+  @Mock private CatalogAccessService accessService;
+  @Mock private CatalogDtoMapper dtoMapper;
 
-  @MockitoBean private CatalogService catalogService;
-  @MockitoBean private CatalogVariantService variantService;
-  @MockitoBean private CatalogAccessService accessService;
-  @MockitoBean private CatalogDtoMapper dtoMapper;
+  @InjectMocks private CatalogController catalogController;
 
+  private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
   private MockMvc mockMvc;
 
   @BeforeEach
   void setUp() {
-    mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
+    mockMvc =
+        MockMvcBuilders.standaloneSetup(catalogController)
+            .setControllerAdvice(new ApiExceptionHandler())
+            .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+            .build();
   }
 
   @Test

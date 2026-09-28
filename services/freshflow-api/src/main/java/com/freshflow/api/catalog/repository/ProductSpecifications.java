@@ -1,6 +1,7 @@
 package com.freshflow.api.catalog.repository;
 
-import com.freshflow.api.catalog.dto.ProductFilterCriteria;
+import com.freshflow.api.catalog.dto.request.ProductFilterCriteria;
+import com.freshflow.api.catalog.enums.*;
 import com.freshflow.api.catalog.model.*;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;

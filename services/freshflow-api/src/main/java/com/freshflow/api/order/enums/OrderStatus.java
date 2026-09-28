@@ -1,0 +1,13 @@
+package com.freshflow.api.order.enums;
+
+public enum OrderStatus {
+  AWAITING_MERCHANT_CONFIRMATION,
+  AWAITING_PAYMENT,
+  PENDING,
+  PROCESSING,
+  SHIPPING,
+  DELIVERY_FAILED,
+  DISPUTED,
+  COMPLETED,
+  CANCELLED
+}

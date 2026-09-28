@@ -3,6 +3,7 @@ package com.freshflow.api.catalog.repository;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.freshflow.api.catalog.enums.*;
 import java.util.Map;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;

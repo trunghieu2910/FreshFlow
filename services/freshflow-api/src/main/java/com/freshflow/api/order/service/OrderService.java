@@ -2,21 +2,19 @@ package com.freshflow.api.order.service;
 
 import com.freshflow.api.catalog.service.CatalogAccessService;
 import com.freshflow.api.catalog.service.CatalogService;
-import com.freshflow.api.order.dto.MerchantDashboardSummaryDto;
-import com.freshflow.api.order.dto.MerchantOrderDetailDto;
-import com.freshflow.api.order.dto.MerchantOrderItemDto;
-import com.freshflow.api.order.dto.MerchantOrderSummaryDto;
+import com.freshflow.api.order.dto.response.MerchantDashboardSummaryDto;
+import com.freshflow.api.order.dto.response.MerchantOrderDetailDto;
+import com.freshflow.api.order.dto.response.MerchantOrderSummaryDto;
+import com.freshflow.api.order.exception.OrderErrorCode;
+import com.freshflow.api.order.exception.OrderNotFoundException;
+import com.freshflow.api.order.exception.OrderRuleViolationException;
+import com.freshflow.api.order.mapper.OrderDtoMapper;
 import com.freshflow.api.order.model.Order;
 import com.freshflow.api.order.repository.OrderRepository;
-import com.freshflow.api.order.service.exception.OrderErrorCode;
-import com.freshflow.api.order.service.exception.OrderNotFoundException;
-import com.freshflow.api.order.service.exception.OrderRuleViolationException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +29,7 @@ public class OrderService {
   private final CatalogAccessService catalogAccessService;
   private final OrderRepository orderRepository;
   private final CatalogService catalogService;
+  private final OrderDtoMapper orderDtoMapper;
 
   public MerchantDashboardSummaryDto getMerchantDashboardSummary(Long storeId, Long actorUserId) {
     catalogAccessService.requireOwnedStore(storeId, actorUserId);
@@ -69,7 +68,7 @@ public class OrderService {
       orders = orderRepository.findAllByStore_IdOrderByCreatedAtDesc(storeId, pageable);
     }
 
-    return orders.map(this::toSummaryDto);
+    return orders.map(orderDtoMapper::toSummaryDto);
   }
 
   public MerchantOrderDetailDto getMerchantOrderDetail(
@@ -82,7 +81,7 @@ public class OrderService {
             .orElseThrow(
                 () -> new OrderNotFoundException(OrderErrorCode.ORDER_NOT_FOUND, "Order", orderId));
 
-    return toDetailDto(order);
+    return orderDtoMapper.toDetailDto(order);
   }
 
   @Transactional
@@ -109,7 +108,7 @@ public class OrderService {
     order.setUpdatedAt(now);
 
     Order saved = orderRepository.save(order);
-    return toDetailDto(saved);
+    return orderDtoMapper.toDetailDto(saved);
   }
 
   @Transactional
@@ -132,7 +131,7 @@ public class OrderService {
     order.setUpdatedAt(now);
 
     Order saved = orderRepository.save(order);
-    return toDetailDto(saved);
+    return orderDtoMapper.toDetailDto(saved);
   }
 
   @Transactional
@@ -153,7 +152,7 @@ public class OrderService {
     order.setUpdatedAt(now);
 
     Order saved = orderRepository.save(order);
-    return toDetailDto(saved);
+    return orderDtoMapper.toDetailDto(saved);
   }
 
   @Transactional
@@ -172,7 +171,7 @@ public class OrderService {
     order.setUpdatedAt(now);
 
     Order saved = orderRepository.save(order);
-    return toDetailDto(saved);
+    return orderDtoMapper.toDetailDto(saved);
   }
 
   private Order requireOrder(Long orderId, Long storeId) {
@@ -180,112 +179,5 @@ public class OrderService {
         .findByIdAndStore_Id(orderId, storeId)
         .orElseThrow(
             () -> new OrderNotFoundException(OrderErrorCode.ORDER_NOT_FOUND, "Order", orderId));
-  }
-
-  private MerchantOrderSummaryDto toSummaryDto(Order order) {
-    String customerName =
-        order.getCustomerUser() != null
-            ? order.getCustomerUser().getFullName()
-            : "Khách hàng ẩn danh";
-    String phoneMasked =
-        order.getCustomerUser() != null
-            ? maskPhone(order.getCustomerUser().getPhone())
-            : "0901***456";
-
-    String itemsSummary =
-        order.getItems().stream()
-            .map(
-                item ->
-                    item.getQuantity()
-                        + "x "
-                        + item.getProductNameSnapshot()
-                        + " ("
-                        + item.getVariantNameSnapshot()
-                        + ")")
-            .collect(Collectors.joining(", "));
-
-    if (itemsSummary.isBlank()) {
-      itemsSummary = "Không có thông tin món";
-    }
-
-    return new MerchantOrderSummaryDto(
-        order.getId(),
-        order.getOrderNumber(),
-        customerName,
-        phoneMasked,
-        itemsSummary,
-        order.getTotalAmount(),
-        order.getStatus(),
-        formatStatusLabel(order.getStatus()),
-        order.getPaymentMethod(),
-        order.getCreatedAt());
-  }
-
-  private MerchantOrderDetailDto toDetailDto(Order order) {
-    String customerName =
-        order.getCustomerUser() != null
-            ? order.getCustomerUser().getFullName()
-            : "Khách hàng ẩn danh";
-    String phoneMasked =
-        order.getCustomerUser() != null
-            ? maskPhone(order.getCustomerUser().getPhone())
-            : "0901***456";
-
-    List<MerchantOrderItemDto> itemDtos =
-        order.getItems().stream()
-            .map(
-                i ->
-                    new MerchantOrderItemDto(
-                        i.getId(),
-                        i.getProductNameSnapshot(),
-                        i.getVariantNameSnapshot(),
-                        i.getUnitPriceSnapshot(),
-                        i.getQuantity(),
-                        i.getLineTotal()))
-            .toList();
-
-    return new MerchantOrderDetailDto(
-        order.getId(),
-        order.getOrderNumber(),
-        customerName,
-        phoneMasked,
-        order.getStatus(),
-        formatStatusLabel(order.getStatus()),
-        order.getPaymentMethod(),
-        order.getMerchantAcceptanceStatus(),
-        order.getSubtotal(),
-        order.getDeliveryFee(),
-        order.getDiscountAmount(),
-        order.getTotalAmount(),
-        order.getCancelReason(),
-        order.getCreatedAt(),
-        order.getAcceptedAt(),
-        order.getProcessingAt(),
-        order.getCompletedAt(),
-        order.getCancelledAt(),
-        itemDtos);
-  }
-
-  private String maskPhone(String phone) {
-    if (phone == null || phone.length() < 7) {
-      return "0901***456";
-    }
-    return phone.substring(0, 4) + "***" + phone.substring(phone.length() - 3);
-  }
-
-  private String formatStatusLabel(String status) {
-    if (status == null) return "Chưa xác định";
-    return switch (status) {
-      case "AWAITING_MERCHANT_CONFIRMATION" -> "Chờ quán xác nhận";
-      case "AWAITING_PAYMENT" -> "Chờ thanh toán online";
-      case "PENDING" -> "Chờ chuẩn bị";
-      case "PROCESSING" -> "Đang pha chế";
-      case "SHIPPING" -> "Đang giao hàng";
-      case "DELIVERY_FAILED" -> "Giao hàng thất bại";
-      case "DISPUTED" -> "Đang khiếu nại";
-      case "COMPLETED" -> "Hoàn tất";
-      case "CANCELLED" -> "Đã hủy";
-      default -> status;
-    };
   }
 }

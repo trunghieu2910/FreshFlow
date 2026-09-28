@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.freshflow.api.catalog.dto.ProductCatalogDto;
-import com.freshflow.api.catalog.dto.ProductFilterCriteria;
+import com.freshflow.api.catalog.dto.request.ProductFilterCriteria;
+import com.freshflow.api.catalog.dto.response.ProductCatalogDto;
 import com.freshflow.api.catalog.model.Store;
 import com.freshflow.api.catalog.repository.StoreRepository;
 import jakarta.persistence.EntityManagerFactory;

@@ -1,14 +1,14 @@
 package com.freshflow.api.catalog.controller;
 
-import com.freshflow.api.catalog.dto.CatalogDtoMapper;
-import com.freshflow.api.catalog.dto.CreateProductRequest;
-import com.freshflow.api.catalog.dto.CreateProductVariantRequest;
-import com.freshflow.api.catalog.dto.ProductCatalogDto;
-import com.freshflow.api.catalog.dto.ProductFilterCriteria;
-import com.freshflow.api.catalog.dto.ProductVariantDto;
-import com.freshflow.api.catalog.dto.UpdateProductRequest;
-import com.freshflow.api.catalog.dto.UpdateProductVariantRequest;
-import com.freshflow.api.catalog.model.InventoryMode;
+import com.freshflow.api.catalog.dto.request.CreateProductRequest;
+import com.freshflow.api.catalog.dto.request.CreateProductVariantRequest;
+import com.freshflow.api.catalog.dto.request.ProductFilterCriteria;
+import com.freshflow.api.catalog.dto.request.UpdateProductRequest;
+import com.freshflow.api.catalog.dto.request.UpdateProductVariantRequest;
+import com.freshflow.api.catalog.dto.response.ProductCatalogDto;
+import com.freshflow.api.catalog.dto.response.ProductVariantDto;
+import com.freshflow.api.catalog.enums.InventoryMode;
+import com.freshflow.api.catalog.mapper.CatalogDtoMapper;
 import com.freshflow.api.catalog.model.Product;
 import com.freshflow.api.catalog.service.CatalogAccessService;
 import com.freshflow.api.catalog.service.CatalogService;

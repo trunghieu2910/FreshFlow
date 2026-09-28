@@ -1,7 +1,8 @@
 package com.freshflow.api.catalog.controller;
 
-import com.freshflow.api.catalog.dto.*;
-import com.freshflow.api.catalog.model.InventoryMode;
+import com.freshflow.api.catalog.dto.request.*;
+import com.freshflow.api.catalog.dto.response.*;
+import com.freshflow.api.catalog.enums.InventoryMode;
 import com.freshflow.api.common.api.error.ApiErrorResponse;
 import com.freshflow.api.common.config.OpenApiConfig;
 import io.swagger.v3.oas.annotations.Operation;
