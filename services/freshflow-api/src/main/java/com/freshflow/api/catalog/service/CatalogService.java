@@ -213,6 +213,11 @@ public class CatalogService {
     return new PageImpl<>(content, pageable, content.size());
   }
 
+  /** Resolves a persisted user for an internal transaction. */
+  public User getUser(Long userId) {
+    return requireUser(userId);
+  }
+
   /**
    * Returns a product only when its store, category assignment, category and at least one variant
    * are active. Capacity is read from the database for this response.

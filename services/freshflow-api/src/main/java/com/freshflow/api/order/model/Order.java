@@ -2,11 +2,15 @@ package com.freshflow.api.order.model;
 
 import com.freshflow.api.catalog.model.Store;
 import com.freshflow.api.catalog.model.User;
+import com.freshflow.api.common.model.Money;
+import com.freshflow.api.order.enums.MerchantAcceptanceStatus;
+import com.freshflow.api.order.enums.OrderStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -20,6 +24,63 @@ import org.hibernate.annotations.BatchSize;
 @Setter
 @NoArgsConstructor
 public class Order {
+
+  /** Builds a new aggregate from server-created item snapshots and computes its monetary totals. */
+  public static Order create(
+      String orderNumber,
+      User customer,
+      Store store,
+      OrderStatus status,
+      String paymentMethod,
+      MerchantAcceptanceStatus acceptanceStatus,
+      List<OrderItem> items,
+      Money deliveryFee,
+      Money discountAmount) {
+    if (orderNumber == null || orderNumber.isBlank() || orderNumber.trim().length() > 30) {
+      throw new IllegalArgumentException("A valid order number is required");
+    }
+    if (customer == null || customer.getId() == null || store == null || store.getId() == null) {
+      throw new IllegalArgumentException("Persisted customer and store are required");
+    }
+    if (status == null
+        || acceptanceStatus == null
+        || paymentMethod == null
+        || !List.of("ONLINE_MOCK", "CASH_ON_DELIVERY", "BANK_TRANSFER_ON_DELIVERY")
+            .contains(paymentMethod)) {
+      throw new IllegalArgumentException("Valid order state and payment method are required");
+    }
+    if (items == null || items.isEmpty() || deliveryFee == null || discountAmount == null) {
+      throw new IllegalArgumentException("Items, delivery fee and discount are required");
+    }
+    Order order = new Order();
+    order.orderNumber = orderNumber.trim();
+    order.customerUser = customer;
+    order.store = store;
+    order.status = status.name();
+    order.paymentMethod = paymentMethod;
+    order.merchantAcceptanceStatus = acceptanceStatus.name();
+    BigDecimal subtotal = BigDecimal.ZERO;
+    for (OrderItem item : items) {
+      if (item == null
+          || item.getProductVariant() == null
+          || item.getProductVariant().getProduct() == null
+          || !store.getId().equals(item.getProductVariant().getProduct().getStore().getId())) {
+        throw new IllegalArgumentException("Every item must belong to the order store");
+      }
+      order.addItem(item);
+      subtotal = subtotal.add(item.getLineTotal());
+    }
+    if (discountAmount.getAmount().compareTo(subtotal) > 0) {
+      throw new IllegalArgumentException("Discount cannot exceed subtotal");
+    }
+    order.subtotal = subtotal;
+    order.deliveryFee = deliveryFee.getAmount();
+    order.discountAmount = discountAmount.getAmount();
+    order.totalAmount = subtotal.subtract(order.discountAmount).add(order.deliveryFee);
+    order.createdAt = OffsetDateTime.now(ZoneOffset.UTC);
+    order.updatedAt = order.createdAt;
+    return order;
+  }
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
