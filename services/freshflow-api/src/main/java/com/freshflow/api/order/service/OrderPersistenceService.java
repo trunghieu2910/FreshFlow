@@ -7,6 +7,7 @@ import com.freshflow.api.catalog.service.CatalogService;
 import com.freshflow.api.common.model.Money;
 import com.freshflow.api.order.enums.MerchantAcceptanceStatus;
 import com.freshflow.api.order.enums.OrderStatus;
+import com.freshflow.api.order.model.AddressSnapshot;
 import com.freshflow.api.order.model.Order;
 import com.freshflow.api.order.model.OrderItem;
 import com.freshflow.api.order.repository.OrderRepository;
@@ -42,6 +43,31 @@ public class OrderPersistenceService {
       List<LineSelection> selections,
       Money deliveryFee,
       Money discountAmount) {
+    return create(
+        orderNumber,
+        customerId,
+        storeId,
+        status,
+        paymentMethod,
+        acceptanceStatus,
+        selections,
+        deliveryFee,
+        discountAmount,
+        null);
+  }
+
+  @Transactional
+  public Order create(
+      String orderNumber,
+      Long customerId,
+      Long storeId,
+      OrderStatus status,
+      String paymentMethod,
+      MerchantAcceptanceStatus acceptanceStatus,
+      List<LineSelection> selections,
+      Money deliveryFee,
+      Money discountAmount,
+      AddressSnapshot address) {
     if (selections == null || selections.isEmpty()) {
       throw new IllegalArgumentException("At least one order item is required");
     }
@@ -64,6 +90,7 @@ public class OrderPersistenceService {
       }
       Product product = catalogService.getProduct(selection.productId());
       if (!storeId.equals(product.getStore().getId())
+          || !storeId.equals(product.getStoreCategory().getStore().getId())
           || !Boolean.TRUE.equals(product.getIsActive())
           || !Boolean.TRUE.equals(product.getStoreCategory().getIsActive())
           || !Boolean.TRUE.equals(product.getStoreCategory().getCategory().getIsActive())) {
@@ -82,7 +109,7 @@ public class OrderPersistenceService {
       }
       items.add(OrderItem.fromCatalog(variant, selection.quantity()));
     }
-    return orderRepository.save(
+    Order order =
         Order.create(
             orderNumber,
             customer,
@@ -92,6 +119,10 @@ public class OrderPersistenceService {
             acceptanceStatus,
             items,
             deliveryFee,
-            discountAmount));
+            discountAmount);
+    if (address != null) {
+      order.setDeliveryAddress(address);
+    }
+    return orderRepository.save(order);
   }
 }

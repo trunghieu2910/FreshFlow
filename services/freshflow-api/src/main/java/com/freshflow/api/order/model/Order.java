@@ -123,6 +123,24 @@ public class Order {
   @NotNull @Column(name = "total_amount", nullable = false, precision = 12, scale = 2)
   private BigDecimal totalAmount;
 
+  @Column(name = "recipient_name_snapshot", length = 150)
+  private String recipientNameSnapshot;
+
+  @Column(name = "recipient_phone_snapshot", length = 30)
+  private String recipientPhoneSnapshot;
+
+  @Column(name = "address_line_snapshot", length = 255)
+  private String addressLineSnapshot;
+
+  @Column(name = "ward_snapshot", length = 100)
+  private String wardSnapshot;
+
+  @Column(name = "district_snapshot", length = 100)
+  private String districtSnapshot;
+
+  @Column(name = "province_snapshot", length = 100)
+  private String provinceSnapshot;
+
   @Size(max = 80)
   @Column(name = "cancel_reason", length = 80)
   private String cancelReason;
@@ -152,5 +170,17 @@ public class Order {
   public void addItem(OrderItem item) {
     items.add(item);
     item.setOrder(this);
+  }
+
+  public void setDeliveryAddress(AddressSnapshot address) {
+    if (address == null) {
+      throw new IllegalArgumentException("Delivery address is required");
+    }
+    recipientNameSnapshot = address.getRecipientName();
+    recipientPhoneSnapshot = address.getPhone();
+    addressLineSnapshot = address.getAddressLine();
+    wardSnapshot = address.getWard();
+    districtSnapshot = address.getDistrict();
+    provinceSnapshot = address.getProvince();
   }
 }

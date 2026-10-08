@@ -6,4 +6,4 @@ The creation service receives IDs and quantities, loads the current customer, st
 
 The catalog foreign keys remain for traceability, while order reads use snapshot columns. Renaming a product or changing a variant price cannot change an existing order. V7 checks the stored arithmetic at the database boundary. Existing V6 demo rows preserve their original historical values; some demo order subtotals do not equal their seeded item sums, so V7 does not assert cross-row equality for legacy data.
 
-`OrderPersistenceService` is a persistence building block for FF-06-03-2 checkout. Checkout will own inventory reservation, payment attempt creation, idempotency and initial state selection in its surrounding transaction. This task adds no customer-facing create endpoint.
+`OrderPersistenceService` is used by the FF-06-03-2 checkout transaction, documented in [06-checkout-transaction.md](./06-checkout-transaction.md). Checkout owns inventory reservation, payment attempt creation, idempotency and initial state selection. This persistence component does not expose a customer-facing endpoint by itself.

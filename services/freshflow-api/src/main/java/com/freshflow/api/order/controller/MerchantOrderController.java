@@ -4,6 +4,8 @@ import com.freshflow.api.order.dto.request.RejectOrderRequest;
 import com.freshflow.api.order.dto.response.MerchantDashboardSummaryDto;
 import com.freshflow.api.order.dto.response.MerchantOrderDetailDto;
 import com.freshflow.api.order.dto.response.MerchantOrderSummaryDto;
+import com.freshflow.api.order.dto.response.OrderReadDto;
+import com.freshflow.api.order.service.OrderReadService;
 import com.freshflow.api.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class MerchantOrderController {
 
   private final OrderService orderService;
+  private final OrderReadService orderReadService;
 
   @GetMapping("/dashboard/summary")
   public ResponseEntity<MerchantDashboardSummaryDto> getDashboardSummary(
@@ -42,12 +45,11 @@ public class MerchantOrderController {
   }
 
   @GetMapping("/orders/{orderId}")
-  public ResponseEntity<MerchantOrderDetailDto> getOrderDetail(
+  public ResponseEntity<OrderReadDto> getOrderDetail(
       @PathVariable Long storeId,
       @PathVariable Long orderId,
       @RequestHeader(value = "X-User-Id", required = false) Long actorUserId) {
-    MerchantOrderDetailDto detail =
-        orderService.getMerchantOrderDetail(storeId, orderId, actorUserId);
+    OrderReadDto detail = orderReadService.merchantDetail(storeId, orderId, actorUserId);
     return ResponseEntity.ok(detail);
   }
 

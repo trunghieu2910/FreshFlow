@@ -42,7 +42,7 @@ public class GlobalExceptionHandler {
       OrderRuleViolationException exception, HttpServletRequest request) {
     HttpStatus status =
         switch (exception.getErrorCode()) {
-          case ORDER_INVALID_TRANSITION -> HttpStatus.CONFLICT;
+          case ORDER_INVALID_TRANSITION, ORDER_IDEMPOTENCY_CONFLICT -> HttpStatus.CONFLICT;
           case ORDER_ACCESS_DENIED -> HttpStatus.FORBIDDEN;
           default -> HttpStatus.BAD_REQUEST;
         };
