@@ -6,6 +6,7 @@ import com.freshflow.api.catalog.enums.InventoryMode;
 import com.freshflow.api.catalog.model.*;
 import com.freshflow.api.catalog.model.Product;
 import com.freshflow.api.catalog.model.ProductVariant;
+import com.freshflow.api.catalog.model.StoreCategory;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,6 +40,47 @@ public class CatalogDtoMapper {
         product.getImageUrl(),
         product.getIsActive(),
         variants);
+  }
+
+  /**
+   * Maps a purchasable public-catalog item. Inactive variants are deliberately omitted so a
+   * customer can never mistake a soft-deleted variant for a purchasable one.
+   */
+  public ProductCatalogDto toPublicProductDto(
+      Product product, Map<Long, CapacitySnapshot> capacityByVariantId) {
+    Objects.requireNonNull(product, "product must not be null");
+    Map<Long, CapacitySnapshot> capacities =
+        capacityByVariantId == null ? Map.of() : capacityByVariantId;
+    List<ProductVariantDto> variants =
+        product.getVariants() == null
+            ? List.of()
+            : product.getVariants().stream()
+                .filter(variant -> Boolean.TRUE.equals(variant.getIsActive()))
+                .map(
+                    variant ->
+                        toProductVariantDto(
+                            variant,
+                            variant.getId() == null ? null : capacities.get(variant.getId())))
+                .toList();
+    return new ProductCatalogDto(
+        product.getId(),
+        product.getName(),
+        product.getDescription(),
+        product.getImageUrl(),
+        true,
+        toStoreCategoryDto(product.getStoreCategory()),
+        variants);
+  }
+
+  private static StoreCategoryDto toStoreCategoryDto(StoreCategory storeCategory) {
+    if (storeCategory == null || storeCategory.getCategory() == null) {
+      return null;
+    }
+    return new StoreCategoryDto(
+        storeCategory.getId(),
+        storeCategory.getCategory().getId(),
+        storeCategory.getCategory().getName(),
+        storeCategory.getDisplayOrder());
   }
 
   public ProductVariantDto toProductVariantDto(

@@ -21,9 +21,22 @@ public record ProductCatalogDto(
             description = "Whether the product is currently active in the catalog",
             example = "true")
         Boolean active,
+    @Schema(description = "Active store-category assignment for this product")
+        StoreCategoryDto storeCategory,
     @Schema(description = "List of product variants (sizes, prices, capacity status)")
         List<ProductVariantDto> variants) {
   public ProductCatalogDto {
     variants = variants == null ? List.of() : List.copyOf(variants);
+  }
+
+  /** Compatibility constructor for internal catalog-management responses. */
+  public ProductCatalogDto(
+      Long id,
+      String name,
+      String description,
+      String imageUrl,
+      Boolean active,
+      List<ProductVariantDto> variants) {
+    this(id, name, description, imageUrl, active, null, variants);
   }
 }

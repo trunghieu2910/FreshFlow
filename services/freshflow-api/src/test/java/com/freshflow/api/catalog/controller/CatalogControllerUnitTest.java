@@ -31,7 +31,7 @@ import com.freshflow.api.catalog.model.Product;
 import com.freshflow.api.catalog.service.CatalogAccessService;
 import com.freshflow.api.catalog.service.CatalogService;
 import com.freshflow.api.catalog.service.CatalogVariantService;
-import com.freshflow.api.common.api.error.ApiExceptionHandler;
+import com.freshflow.api.common.api.error.GlobalExceptionHandler;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,7 +66,7 @@ class CatalogControllerUnitTest {
   void setUp() {
     mockMvc =
         MockMvcBuilders.standaloneSetup(catalogController)
-            .setControllerAdvice(new ApiExceptionHandler())
+            .setControllerAdvice(new GlobalExceptionHandler())
             .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
             .build();
   }
@@ -117,8 +117,7 @@ class CatalogControllerUnitTest {
     ProductCatalogDto dto =
         new ProductCatalogDto(10L, "Trà Sữa Oolong", "Mô tả", "img.jpg", true, List.of());
 
-    when(catalogService.getProduct(10L)).thenReturn(product);
-    when(dtoMapper.toProductDto(product)).thenReturn(dto);
+    when(catalogService.getPublicProduct(1L, 10L)).thenReturn(dto);
 
     mockMvc
         .perform(get("/api/v1/stores/1/products/10"))
@@ -131,7 +130,7 @@ class CatalogControllerUnitTest {
   @DisplayName(
       "GET /api/v1/stores/{storeId}/products/{productId} should return 404 NOT_FOUND when missing")
   void getProduct_whenNotFound_shouldReturn404() throws Exception {
-    when(catalogService.getProduct(999L))
+    when(catalogService.getPublicProduct(1L, 999L))
         .thenThrow(
             new CatalogNotFoundException(CatalogErrorCode.PRODUCT_NOT_FOUND, "Product", 999L));
 

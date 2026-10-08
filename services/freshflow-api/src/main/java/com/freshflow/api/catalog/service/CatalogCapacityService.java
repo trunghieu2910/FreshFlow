@@ -59,9 +59,10 @@ public class CatalogCapacityService {
     List<Long> variantIds = madeToOrderVariants.stream().map(ProductVariant::getId).toList();
 
     String sql =
-        "SELECT variant_id, capacity_limit, reserved_quantity "
+        "SELECT variant_id, SUM(capacity_limit) AS capacity_limit, SUM(reserved_quantity) AS reserved_quantity "
             + "FROM inventory_capacity_records "
-            + "WHERE variant_id IN (:variantIds) AND capacity_date = :capacityDate";
+            + "WHERE variant_id IN (:variantIds) AND capacity_date = :capacityDate "
+            + "GROUP BY variant_id";
 
     MapSqlParameterSource params =
         new MapSqlParameterSource()

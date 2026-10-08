@@ -78,8 +78,7 @@ public class CatalogController implements CatalogApi {
 
   @Override
   public ResponseEntity<ProductCatalogDto> getProduct(Long storeId, Long productId) {
-    Product product = catalogService.getProduct(productId);
-    return ResponseEntity.ok(dtoMapper.toProductDto(product));
+    return ResponseEntity.ok(catalogService.getPublicProduct(storeId, productId));
   }
 
   // -------------------------------------------------------------------------

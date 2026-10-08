@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -71,7 +72,7 @@ public class CatalogService {
   }
 
   public List<Store> listStores() {
-    return storeRepository.findAllByOrderByNameAsc();
+    return storeRepository.findAllByStatusOrderByNameAsc(StoreStatus.ACTIVE.name());
   }
 
   public Store getStore(Long storeId) {
@@ -187,7 +188,7 @@ public class CatalogService {
 
   public Page<ProductCatalogDto> listProductsByStore(
       Long storeId, ProductFilterCriteria criteria, Pageable pageable) {
-    getStore(storeId);
+    requireActiveStore(storeId);
     Specification<Product> spec = ProductSpecifications.withFilter(storeId, criteria);
     Page<Product> page = productRepository.findAll(spec, pageable);
 
@@ -200,7 +201,34 @@ public class CatalogService {
     Map<Long, CapacitySnapshot> capacityMap =
         capacityService.getCapacitySnapshots(allVariants, LocalDate.now());
 
-    return page.map(product -> dtoMapper.toProductDto(product, capacityMap));
+    List<ProductCatalogDto> content =
+        page.getContent().stream()
+            .map(product -> dtoMapper.toPublicProductDto(product, capacityMap))
+            .filter(product -> !product.variants().isEmpty())
+            .filter(
+                product ->
+                    !Boolean.TRUE.equals(criteria.availableOnly())
+                        || product.variants().stream().anyMatch(v -> v.available()))
+            .toList();
+    return new PageImpl<>(content, pageable, content.size());
+  }
+
+  /**
+   * Returns a product only when its store, category assignment, category and at least one variant
+   * are active. Capacity is read from the database for this response.
+   */
+  public ProductCatalogDto getPublicProduct(Long storeId, Long productId) {
+    requireActiveStore(storeId);
+    Product product =
+        productRepository
+            .findByIdAndStore_Id(requireId(productId, "Product"), storeId)
+            .orElseThrow(() -> notFound(CatalogErrorCode.PRODUCT_NOT_FOUND, "Product", productId));
+    if (!isPubliclyPurchasable(product)) {
+      throw notFound(CatalogErrorCode.PRODUCT_NOT_FOUND, "Product", productId);
+    }
+    Map<Long, CapacitySnapshot> capacityMap =
+        capacityService.getCapacitySnapshots(product.getVariants(), LocalDate.now());
+    return dtoMapper.toPublicProductDto(product, capacityMap);
   }
 
   public Product getProduct(Long productId) {
@@ -259,6 +287,25 @@ public class CatalogService {
             () ->
                 notFound(
                     CatalogErrorCode.STORE_CATEGORY_NOT_FOUND, "StoreCategory", storeCategoryId));
+  }
+
+  private Store requireActiveStore(Long storeId) {
+    Store store = getStore(storeId);
+    if (!StoreStatus.ACTIVE.name().equals(store.getStatus())) {
+      throw notFound(CatalogErrorCode.STORE_NOT_FOUND, "Store", storeId);
+    }
+    return store;
+  }
+
+  private static boolean isPubliclyPurchasable(Product product) {
+    StoreCategory storeCategory = product.getStoreCategory();
+    return Boolean.TRUE.equals(product.getIsActive())
+        && storeCategory != null
+        && Boolean.TRUE.equals(storeCategory.getIsActive())
+        && storeCategory.getCategory() != null
+        && Boolean.TRUE.equals(storeCategory.getCategory().getIsActive())
+        && product.getVariants() != null
+        && product.getVariants().stream().anyMatch(v -> Boolean.TRUE.equals(v.getIsActive()));
   }
 
   private void validateStoreCategoryOwnership(Store store, StoreCategory storeCategory) {

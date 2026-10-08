@@ -10,7 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.freshflow.api.common.api.error.ApiExceptionHandler;
+import com.freshflow.api.common.api.error.GlobalExceptionHandler;
 import com.freshflow.api.order.dto.request.RejectOrderRequest;
 import com.freshflow.api.order.dto.response.MerchantDashboardSummaryDto;
 import com.freshflow.api.order.dto.response.MerchantOrderDetailDto;
@@ -47,7 +47,7 @@ class MerchantOrderControllerUnitTest {
   void setUp() {
     mockMvc =
         MockMvcBuilders.standaloneSetup(controller)
-            .setControllerAdvice(new ApiExceptionHandler())
+        .setControllerAdvice(new GlobalExceptionHandler())
             .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
             .build();
   }

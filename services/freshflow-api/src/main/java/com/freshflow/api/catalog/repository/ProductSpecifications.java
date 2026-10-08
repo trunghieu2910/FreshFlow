@@ -45,6 +45,7 @@ public final class ProductSpecifications {
       if (activeOnly) {
         predicates.add(cb.isTrue(root.get("isActive")));
         predicates.add(cb.isTrue(scJoin.get("isActive")));
+        predicates.add(cb.isTrue(scJoin.get("category").get("isActive")));
 
         Join<Product, Store> storeJoin = root.join("store", JoinType.INNER);
         predicates.add(cb.equal(storeJoin.get("status"), StoreStatus.ACTIVE.name()));
@@ -62,7 +63,7 @@ public final class ProductSpecifications {
       boolean hasInventoryMode = criteria != null && criteria.inventoryMode() != null;
       boolean hasAvailableOnly = criteria != null && Boolean.TRUE.equals(criteria.availableOnly());
 
-      if (hasSearch || hasSize || hasInventoryMode || hasAvailableOnly) {
+      if (activeOnly || hasSearch || hasSize || hasInventoryMode || hasAvailableOnly) {
         query.distinct(true);
         Join<Product, ProductVariant> pvJoin = root.join("variants", JoinType.INNER);
 
