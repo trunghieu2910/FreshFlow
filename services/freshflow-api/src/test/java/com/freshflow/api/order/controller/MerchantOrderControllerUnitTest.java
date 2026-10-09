@@ -47,7 +47,7 @@ class MerchantOrderControllerUnitTest {
   void setUp() {
     mockMvc =
         MockMvcBuilders.standaloneSetup(controller)
-        .setControllerAdvice(new GlobalExceptionHandler())
+            .setControllerAdvice(new GlobalExceptionHandler())
             .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
             .build();
   }

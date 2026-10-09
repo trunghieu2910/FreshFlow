@@ -13,3 +13,8 @@ History responses are paged newest-first and contain order/acceptance, latest pa
 Driver detail shows only the latest assignment and redacts dispute messages, merchant resolution and audit reasons. Reassignment removes the previous Driver's detail/history access. Customer and Merchant can see delivery attempt history. The API never includes `otp_hash`, OTP plaintext or payment provider references. `otp.required` indicates COD. `otp.verificationReady` is true only for the Customer while the Order is shipping, the latest payment is `CASH_COLLECTED`, and an unexpired, unused credential with remaining attempts exists. `otp.codeVisible` is always false because the database stores only a hash; a future OTP issuance/display channel must supply plaintext transiently under its own authorization policy.
 
 `X-User-Id` is the existing development identity contract. Its production replacement must bind the actor to an authenticated principal; this read API does not introduce a new identity mechanism.
+
+
+## FF-07-01-1 implementation update (2026-10-09)
+
+Identity implementation and current scope rules are documented in [DB-07-A](../database/07-identity-schema.md). User/UserRepository now belong to identity. CUSTOMER grants have null Store scope; MERCHANT/DRIVER grants require a Store. Active account and scoped grant are checked on existing APIs; Drivers also need an ACTIVE profile and their latest assignment in the same Store. Availability controls new assignments, not access to assigned work. Store responses omit owner credentials. Demo emails now follow existing V6 identities and the profile-gated dev seed, not the earlier proposed login matrix. JWT/principal integration remains a subsequent task.

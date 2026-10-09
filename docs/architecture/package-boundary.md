@@ -129,3 +129,8 @@ Mỗi pull request cần kiểm tra các câu hỏi sau:
 ## 9. Phạm vi của tài liệu
 
 Tài liệu này định nghĩa package boundary cho modular monolith. Nó chưa biến các package thành Maven module hoặc microservice độc lập. Việc tách deployment, database hoặc repository sẽ chỉ được thực hiện khi có yêu cầu kiến trúc riêng.
+
+
+## FF-07-01-1 implementation update (2026-10-09)
+
+Identity implementation and current scope rules are documented in [DB-07-A](../database/07-identity-schema.md). User/UserRepository now belong to identity. CUSTOMER grants have null Store scope; MERCHANT/DRIVER grants require a Store. Active account and scoped grant are checked on existing APIs; Drivers also need an ACTIVE profile and their latest assignment in the same Store. Availability controls new assignments, not access to assigned work. Store responses omit owner credentials. Demo emails now follow existing V6 identities and the profile-gated dev seed, not the earlier proposed login matrix. JWT/principal integration remains a subsequent task.

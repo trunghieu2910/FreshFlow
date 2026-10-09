@@ -24,12 +24,12 @@ import com.freshflow.api.catalog.model.Product;
 import com.freshflow.api.catalog.model.ProductVariant;
 import com.freshflow.api.catalog.model.Store;
 import com.freshflow.api.catalog.model.StoreCategory;
-import com.freshflow.api.catalog.model.User;
 import com.freshflow.api.catalog.repository.CategoryRepository;
 import com.freshflow.api.catalog.repository.ProductRepository;
 import com.freshflow.api.catalog.repository.StoreCategoryRepository;
 import com.freshflow.api.catalog.repository.StoreRepository;
-import com.freshflow.api.catalog.repository.UserRepository;
+import com.freshflow.api.identity.model.User;
+import com.freshflow.api.identity.repository.UserRepository;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +54,7 @@ class CatalogServiceTest {
   @Mock private ProductRepository productRepository;
   @Mock private CatalogCapacityService capacityService;
   @Mock private CatalogDtoMapper dtoMapper;
+  @Mock private com.freshflow.api.identity.service.RoleGrantService roleGrantService;
 
   @InjectMocks private CatalogService catalogService;
 

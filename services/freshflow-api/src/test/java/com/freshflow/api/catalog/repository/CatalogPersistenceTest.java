@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.freshflow.api.catalog.enums.*;
 import com.freshflow.api.catalog.model.*;
+import com.freshflow.api.identity.model.User;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;
 import java.math.BigDecimal;

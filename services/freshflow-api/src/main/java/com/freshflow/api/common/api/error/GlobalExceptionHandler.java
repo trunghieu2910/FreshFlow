@@ -22,6 +22,19 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+  @ExceptionHandler(com.freshflow.api.identity.exception.IdentityGrantConflictException.class)
+  ResponseEntity<ApiErrorResponse> handleIdentityConflict(
+      RuntimeException exception, HttpServletRequest request) {
+    return response(
+        HttpStatus.CONFLICT, "IDENTITY_GRANT_CONFLICT", exception.getMessage(), request, List.of());
+  }
+
+  @ExceptionHandler(com.freshflow.api.identity.exception.IdentityAccessException.class)
+  ResponseEntity<ApiErrorResponse> handleIdentityAccess(
+      RuntimeException exception, HttpServletRequest request) {
+    return response(
+        HttpStatus.FORBIDDEN, "IDENTITY_ACCESS_DENIED", exception.getMessage(), request, List.of());
+  }
 
   @ExceptionHandler(CatalogNotFoundException.class)
   ResponseEntity<ApiErrorResponse> handleNotFound(

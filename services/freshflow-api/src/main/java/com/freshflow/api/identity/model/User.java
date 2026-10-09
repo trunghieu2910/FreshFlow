@@ -1,4 +1,4 @@
-package com.freshflow.api.catalog.model;
+package com.freshflow.api.identity.model;
 
 import com.freshflow.api.catalog.enums.*;
 import jakarta.persistence.*;
@@ -56,6 +56,7 @@ public class User {
     this.email = email;
   }
 
+  @com.fasterxml.jackson.annotation.JsonIgnore
   public String getPasswordHash() {
     return passwordHash;
   }

@@ -26,6 +26,7 @@ public class OrderReadService {
   private final JdbcTemplate jdbc;
   private final CatalogAccessService catalogAccessService;
   private final OrderDtoMapper orderDtoMapper;
+  private final com.freshflow.api.identity.service.IdentityAccessService identityAccessService;
 
   private enum Viewer {
     CUSTOMER,
@@ -37,6 +38,9 @@ public class OrderReadService {
       "EXISTS (SELECT 1 FROM delivery_assignments mine "
           + "JOIN driver_profiles dp ON dp.id = mine.driver_profile_id "
           + "WHERE mine.order_id = o.id AND dp.user_id = ? AND dp.store_id = o.store_id "
+          + "AND dp.status = 'ACTIVE' AND EXISTS (SELECT 1 FROM users u WHERE u.id = dp.user_id AND u.status = 'ACTIVE') "
+          + "AND EXISTS (SELECT 1 FROM user_store_roles g JOIN roles r ON r.id = g.role_id "
+          + "WHERE g.user_id = dp.user_id AND g.store_id = dp.store_id AND g.status = 'ACTIVE' AND r.code = 'DRIVER') "
           + "AND mine.attempt_number = (SELECT MAX(latest.attempt_number) "
           + "FROM delivery_assignments latest WHERE latest.order_id = o.id))";
 
@@ -53,6 +57,7 @@ public class OrderReadService {
 
   public Page<OrderReadDto.HistoryEntry> customerHistory(Long actorId, Pageable pageable) {
     requireActor(actorId);
+    identityAccessService.requireGrant(actorId, "CUSTOMER", null);
     return history("o.customer_user_id = ?", actorId, pageable);
   }
 
@@ -64,11 +69,13 @@ public class OrderReadService {
 
   public Page<OrderReadDto.HistoryEntry> driverHistory(Long actorId, Pageable pageable) {
     requireActor(actorId);
+    identityAccessService.requireDriver(actorId);
     return history(DRIVER_SCOPE, actorId, pageable);
   }
 
   public OrderReadDto customerDetail(Long orderId, Long actorId) {
     requireActor(actorId);
+    identityAccessService.requireGrant(actorId, "CUSTOMER", null);
     return detail(orderId, "o.customer_user_id = ?", actorId, Viewer.CUSTOMER);
   }
 
@@ -79,6 +86,7 @@ public class OrderReadService {
 
   public OrderReadDto driverDetail(Long orderId, Long actorId) {
     requireActor(actorId);
+    identityAccessService.requireDriver(actorId);
     return detail(orderId, DRIVER_SCOPE, actorId, Viewer.DRIVER);
   }
 

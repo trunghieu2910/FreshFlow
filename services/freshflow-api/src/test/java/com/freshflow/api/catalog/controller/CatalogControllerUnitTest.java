@@ -74,7 +74,7 @@ class CatalogControllerUnitTest {
   @Test
   @DisplayName("GET /api/v1/stores should return 200 OK with list of stores")
   void listStores_shouldReturn200OkWithStoreList() throws Exception {
-    when(catalogService.listStores()).thenReturn(List.of());
+    when(catalogService.listStoreDtos()).thenReturn(List.of());
 
     mockMvc
         .perform(get("/api/v1/stores"))

@@ -1,8 +1,8 @@
 package com.freshflow.api.order.model;
 
 import com.freshflow.api.catalog.model.Store;
-import com.freshflow.api.catalog.model.User;
 import com.freshflow.api.common.model.Money;
+import com.freshflow.api.identity.model.User;
 import com.freshflow.api.order.enums.MerchantAcceptanceStatus;
 import com.freshflow.api.order.enums.OrderStatus;
 import jakarta.persistence.*;

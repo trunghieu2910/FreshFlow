@@ -19,13 +19,13 @@ import com.freshflow.api.catalog.model.Product;
 import com.freshflow.api.catalog.model.ProductVariant;
 import com.freshflow.api.catalog.model.Store;
 import com.freshflow.api.catalog.model.StoreCategory;
-import com.freshflow.api.catalog.model.User;
 import com.freshflow.api.catalog.repository.CategoryRepository;
 import com.freshflow.api.catalog.repository.ProductRepository;
 import com.freshflow.api.catalog.repository.ProductSpecifications;
 import com.freshflow.api.catalog.repository.StoreCategoryRepository;
 import com.freshflow.api.catalog.repository.StoreRepository;
-import com.freshflow.api.catalog.repository.UserRepository;
+import com.freshflow.api.identity.model.User;
+import com.freshflow.api.identity.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -51,6 +51,7 @@ public class CatalogService {
   private final ProductRepository productRepository;
   private final CatalogCapacityService capacityService;
   private final CatalogDtoMapper dtoMapper;
+  private final com.freshflow.api.identity.service.RoleGrantService roleGrantService;
 
   @Transactional
   public Store createStore(CreateStoreRequest request) {
@@ -68,11 +69,19 @@ public class CatalogService {
     store.setStatus(request.status() == null ? StoreStatus.ACTIVE.name() : request.status().name());
     store.setCreatedAt(now);
     store.setUpdatedAt(now);
-    return storeRepository.save(store);
+    Store saved = storeRepository.save(store);
+    roleGrantService.grant(owner.getId(), saved.getId(), "MERCHANT");
+    return saved;
   }
 
   public List<Store> listStores() {
     return storeRepository.findAllByStatusOrderByNameAsc(StoreStatus.ACTIVE.name());
+  }
+
+  public List<com.freshflow.api.catalog.dto.response.StoreDto> listStoreDtos() {
+    return listStores().stream()
+        .map(com.freshflow.api.catalog.dto.response.StoreDto::from)
+        .toList();
   }
 
   public Store getStore(Long storeId) {

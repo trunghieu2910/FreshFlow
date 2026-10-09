@@ -236,6 +236,26 @@ class CheckoutControllerIntegrationTest {
         LocalDate.now(ZoneOffset.UTC));
   }
 
+  @Test
+  @Transactional
+  void lockedCustomerCannotCheckout() throws Exception {
+    Map<String, Object> variant = purchasableVariant();
+    jdbcTemplate.update("UPDATE users SET status = 'LOCKED' WHERE id = ?", customerId);
+    mockMvc
+        .perform(
+            post("/api/v1/orders")
+                .header("X-User-Id", customerId)
+                .header("Idempotency-Key", UUID.randomUUID().toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    body(
+                        id(variant.get("store_id")),
+                        id(variant.get("product_id")),
+                        id(variant.get("variant_id")),
+                        1)))
+        .andExpect(status().isForbidden());
+  }
+
   private Map<String, Object> purchasableVariant() {
     return jdbcTemplate.queryForMap(
         "SELECT p.id AS product_id, pv.id AS variant_id, p.store_id, pv.price "

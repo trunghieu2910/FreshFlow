@@ -1,6 +1,7 @@
 package com.freshflow.api.catalog.model;
 
 import com.freshflow.api.catalog.enums.*;
+import com.freshflow.api.identity.model.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

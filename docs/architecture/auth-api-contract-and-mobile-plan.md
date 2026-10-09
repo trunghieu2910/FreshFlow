@@ -226,8 +226,8 @@ Nhằm phục vụ quá trình phát triển độc lập, kiểm thử liên th
 
 | Thuộc tính | Tài khoản Merchant (Web) | Tài khoản Customer (Android) | Tài khoản Driver (Android) |
 | :--- | :--- | :--- | :--- |
-| **Email** | `merchant@freshflow.com` | `customer@freshflow.com` | `driver@freshflow.com` |
-| **Mật khẩu** | `Password@123` | `Password@123` | `Password@123` |
+| **Email** | `merchant.tea@freshflow.vn` / `merchant.bakery@freshflow.vn` | `customer.demo@freshflow.vn` | `driver.tea@freshflow.vn` / `driver.bakery@freshflow.vn` |
+| **Mật khẩu** | Cấu hình local `FRESHFLOW_DEMO_PASSWORD` | Cấu hình local `FRESHFLOW_DEMO_PASSWORD` | Cấu hình local `FRESHFLOW_DEMO_PASSWORD` |
 | **Họ & Tên** | Nguyễn Văn Chủ Quán | Lê Hoàng Khách Mua | Trần Quốc Tài Xế |
 | **Số điện thoại** | `0901234567` | `0912345678` | `0987654321` |
 | **Vai trò (Role)** | `MERCHANT` | `CUSTOMER` | `DRIVER` |
@@ -380,3 +380,8 @@ clients/freshflow-mobile/
 | 3 | **Ma trận Demo Accounts** | Đầy đủ 3 tài khoản mẫu kèm thông tin đăng nhập, role và context. | **ĐẠT** |
 | 4 | **Android Screen Map** | Đầy đủ sơ đồ Mermaid và mô tả tương tác 12 màn hình cho 2 phân hệ Customer & Driver. | **ĐẠT** |
 | 5 | **Không tác động file Excel** | Giữ nguyên vẹn 100% tệp `plan/backlog-freshflow-mvp-12-tuan-updated.xlsx`. | **ĐẠT** |
+
+
+## FF-07-01-1 implementation update (2026-10-09)
+
+Identity implementation and current scope rules are documented in [DB-07-A](../database/07-identity-schema.md). User/UserRepository now belong to identity. CUSTOMER grants have null Store scope; MERCHANT/DRIVER grants require a Store. Active account and scoped grant are checked on existing APIs; Drivers also need an ACTIVE profile and their latest assignment in the same Store. Availability controls new assignments, not access to assigned work. Store responses omit owner credentials. Demo emails now follow existing V6 identities and the profile-gated dev seed, not the earlier proposed login matrix. JWT/principal integration remains a subsequent task.

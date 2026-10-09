@@ -12,7 +12,7 @@ import com.freshflow.api.catalog.model.Product;
 import com.freshflow.api.catalog.model.ProductVariant;
 import com.freshflow.api.catalog.model.Store;
 import com.freshflow.api.catalog.model.StoreCategory;
-import com.freshflow.api.catalog.model.User;
+import com.freshflow.api.identity.model.User;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;

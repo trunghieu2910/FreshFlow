@@ -3,7 +3,6 @@ package com.freshflow.api.order.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.freshflow.api.catalog.service.CatalogCheckoutReservationService;
-import com.freshflow.api.catalog.service.CatalogService;
 import com.freshflow.api.common.model.Money;
 import com.freshflow.api.order.dto.request.CreateOrderRequest;
 import com.freshflow.api.order.dto.response.CreateOrderResponse;
@@ -31,12 +30,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class CheckoutService {
-  private final CatalogService catalogService;
   private final CatalogCheckoutReservationService reservationService;
   private final OrderPersistenceService persistenceService;
   private final OrderRepository orderRepository;
   private final JdbcTemplate jdbcTemplate;
   private final ObjectMapper objectMapper;
+  private final com.freshflow.api.identity.service.IdentityAccessService identityAccessService;
 
   /** Creates an order or returns the committed result of the same idempotent request. */
   @Transactional
@@ -48,10 +47,8 @@ public class CheckoutService {
     if (idempotencyKey == null || idempotencyKey.isBlank() || idempotencyKey.length() > 120) {
       throw new IllegalArgumentException("Idempotency-Key must contain 1 to 120 characters");
     }
-    if (!"ACTIVE".equals(catalogService.getUser(customerId).getStatus())) {
-      throw new IllegalArgumentException("Customer is not active");
-    }
     String requestHash = hash(request);
+    identityAccessService.requireGrant(customerId, "CUSTOMER", null);
     jdbcTemplate.update(
         "INSERT INTO idempotency_records "
             + "(user_id, idempotency_key, request_hash, expires_at, created_at) "

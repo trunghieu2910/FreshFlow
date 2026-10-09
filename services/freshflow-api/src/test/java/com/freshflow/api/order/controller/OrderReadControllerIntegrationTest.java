@@ -24,6 +24,7 @@ import org.springframework.web.context.WebApplicationContext;
 class OrderReadControllerIntegrationTest {
   @Autowired private WebApplicationContext context;
   @Autowired private JdbcTemplate jdbc;
+  @Autowired private com.freshflow.api.identity.service.RoleGrantService grants;
   private MockMvc mvc;
   private long orderId;
   private long storeId;
@@ -219,15 +220,40 @@ class OrderReadControllerIntegrationTest {
   }
 
   private long user(String prefix) {
-    return jdbc.queryForObject(
-        "INSERT INTO users (email, password_hash, full_name, status, created_at, updated_at) "
-            + "VALUES (?, 'test', ?, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id",
-        Long.class,
-        prefix + UUID.randomUUID() + "@test.local",
-        prefix);
+    long userId =
+        jdbc.queryForObject(
+            "INSERT INTO users (email, password_hash, full_name, status, created_at, updated_at) "
+                + "VALUES (?, 'test', ?, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id",
+            Long.class,
+            prefix + UUID.randomUUID() + "@test.local",
+            prefix);
+    grants.grant(userId, null, "CUSTOMER");
+    return userId;
+  }
+
+  @Test
+  void inactiveDriverIdentityIsDeniedInHistoryAndDetail() throws Exception {
+    jdbc.update("UPDATE users SET status = 'LOCKED' WHERE id = ?", driverId);
+    assertDriverDenied();
+    jdbc.update("UPDATE users SET status = 'ACTIVE' WHERE id = ?", driverId);
+    for (String state : java.util.List.of("SUSPENDED", "INACTIVE")) {
+      jdbc.update("UPDATE driver_profiles SET status = ? WHERE user_id = ?", state, driverId);
+      assertDriverDenied();
+    }
+    jdbc.update("UPDATE driver_profiles SET status = 'ACTIVE' WHERE user_id = ?", driverId);
+    jdbc.update("UPDATE user_store_roles SET status = 'INACTIVE' WHERE user_id = ?", driverId);
+    assertDriverDenied();
+  }
+
+  private void assertDriverDenied() throws Exception {
+    mvc.perform(get("/api/v1/driver/orders").header("X-User-Id", driverId))
+        .andExpect(status().isForbidden());
+    mvc.perform(get("/api/v1/driver/orders/{id}", orderId).header("X-User-Id", driverId))
+        .andExpect(status().isForbidden());
   }
 
   private long driverProfile(long userId, long profileStoreId) {
+    grants.grant(userId, profileStoreId, "DRIVER");
     return jdbc.queryForObject(
         "INSERT INTO driver_profiles (user_id, store_id, status, created_at, updated_at) "
             + "VALUES (?, ?, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id",

@@ -45,7 +45,7 @@ public class CatalogController implements CatalogApi {
 
   @Override
   public ResponseEntity<List<?>> listStores() {
-    return ResponseEntity.ok(catalogService.listStores());
+    return ResponseEntity.ok(catalogService.listStoreDtos());
   }
 
   @Override

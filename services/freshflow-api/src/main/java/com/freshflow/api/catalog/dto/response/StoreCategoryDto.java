@@ -8,4 +8,5 @@ public record StoreCategoryDto(
     @Schema(description = "Store-category assignment identifier", example = "12") Long id,
     @Schema(description = "Canonical category identifier", example = "3") Long categoryId,
     @Schema(description = "Category name", example = "Milk tea") String name,
-    @Schema(description = "Display position in the store catalog", example = "1") int displayOrder) {}
+    @Schema(description = "Display position in the store catalog", example = "1")
+        int displayOrder) {}

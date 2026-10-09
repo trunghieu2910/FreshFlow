@@ -12,9 +12,9 @@ import com.freshflow.api.catalog.exception.CatalogNotFoundException;
 import com.freshflow.api.catalog.exception.CatalogRuleViolationException;
 import com.freshflow.api.catalog.model.Product;
 import com.freshflow.api.catalog.model.Store;
-import com.freshflow.api.catalog.model.User;
 import com.freshflow.api.catalog.repository.ProductRepository;
 import com.freshflow.api.catalog.repository.StoreRepository;
+import com.freshflow.api.identity.model.User;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,12 +28,14 @@ class CatalogAccessServiceTest {
 
   @Mock private StoreRepository storeRepository;
   @Mock private ProductRepository productRepository;
+  @Mock private com.freshflow.api.identity.service.IdentityAccessService identityAccessService;
 
   private CatalogAccessService accessService;
 
   @BeforeEach
   void setUp() {
-    accessService = new CatalogAccessService(storeRepository, productRepository);
+    accessService =
+        new CatalogAccessService(storeRepository, productRepository, identityAccessService);
   }
 
   @Test

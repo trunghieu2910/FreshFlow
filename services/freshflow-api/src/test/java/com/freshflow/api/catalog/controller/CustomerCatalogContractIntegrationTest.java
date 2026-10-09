@@ -77,7 +77,8 @@ class CustomerCatalogContractIntegrationTest {
 
     JsonNode variants = objectMapper.readTree(response).path("variants");
     for (JsonNode variant : variants) {
-      org.junit.jupiter.api.Assertions.assertNotEquals(variantId.longValue(), variant.path("id").asLong());
+      org.junit.jupiter.api.Assertions.assertNotEquals(
+          variantId.longValue(), variant.path("id").asLong());
       org.junit.jupiter.api.Assertions.assertTrue(variant.path("active").asBoolean());
     }
   }
@@ -89,9 +90,7 @@ class CustomerCatalogContractIntegrationTest {
             "SELECT id FROM stores WHERE id <> ? ORDER BY id LIMIT 1", Long.class, storeId);
 
     mockMvc
-        .perform(
-            get(
-                "/api/v1/stores/{storeId}/products/{productId}", anotherStoreId, productId))
+        .perform(get("/api/v1/stores/{storeId}/products/{productId}", anotherStoreId, productId))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("CATALOG_PRODUCT_NOT_FOUND"));
   }

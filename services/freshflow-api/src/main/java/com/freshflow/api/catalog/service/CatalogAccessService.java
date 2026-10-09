@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CatalogAccessService {
   private final StoreRepository storeRepository;
   private final ProductRepository productRepository;
+  private final com.freshflow.api.identity.service.IdentityAccessService identityAccessService;
 
   public Store requireOwnedStore(Long storeId, Long actorUserId) {
     if (actorUserId == null || actorUserId <= 0) {
@@ -36,6 +37,7 @@ public class CatalogAccessService {
       throw new CatalogRuleViolationException(
           CatalogErrorCode.STORE_ACCESS_DENIED, "Merchant does not own this Store");
     }
+    identityAccessService.requireGrant(actorUserId, "MERCHANT", storeId);
     return store;
   }
 

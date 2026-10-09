@@ -141,13 +141,13 @@ UNIQUE (owner_user_id)
 
 #### `user_store_roles`
 
-Gắn một User với một Role trong một Store. Thiết kế này cho phép mở rộng role theo Store mà không làm mất khả năng một User có nhiều role.
+Gắn User với Role: CUSTOMER toàn cục có Store NULL; MERCHANT/DRIVER theo Store cụ thể. Một User có thể có nhiều role; V9 thêm unique global grant và giữ unique Store-scoped grant.
 
 | Column | Type | Null | Rule |
 |---|---|---:|---|
 | `id` | `BIGINT` | No | Primary key |
 | `user_id` | `BIGINT` | No | FK -> `users.id` |
-| `store_id` | `BIGINT` | No | FK -> `stores.id` |
+| `store_id` | `BIGINT` | Yes | NULL for global CUSTOMER; Store required for MERCHANT/DRIVER (V9) |
 | `role_id` | `BIGINT` | No | FK -> `roles.id` |
 | `status` | `VARCHAR(20)` | No | `ACTIVE`, `INACTIVE` |
 | `created_at` | `TIMESTAMPTZ` | No | UTC |

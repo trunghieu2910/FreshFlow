@@ -75,7 +75,7 @@ The approved ERD contains the following 23 physical tables:
 | 3 | `stores` | Store/Catalog | Merchant-owned Store and Store-level defaults |
 | 4 | `user_store_roles` | Common/Identity | User-to-Store role assignment |
 | 5 | `driver_profiles` | Delivery | Driver profile and Store affiliation |
-| 6 | `driver_availability_audits` | Delivery | History of Driver availability changes |
+| 6 | `driver_availability_history` | Delivery | History of Driver availability changes |
 | 7 | `categories` | Catalog | Global category catalog |
 | 8 | `store_categories` | Catalog | Store-specific category assignment and display settings |
 | 9 | `products` | Catalog | Store-owned product definition |
@@ -105,9 +105,9 @@ The following sections are the logical data dictionary. `NOT NULL` is represente
 | `users` | `id`, `email`, `password_hash`, `full_name`, `phone`, `status`, `created_at`, `updated_at` | `id` | None | `email`; `phone` may become unique if phone login is enabled | `email` normalized lowercase; `status` in `ACTIVE`, `LOCKED`, `PENDING`; password is never plaintext | Common/Identity |
 | `roles` | `id`, `code`, `name`, `created_at` | `id` | None | `code` | `code` uppercase and non-empty | Common/Identity |
 | `stores` | `id`, `owner_user_id`, `name`, `phone`, `address_line`, `auto_accept_default`, `status`, timestamps | `id` | `owner_user_id -> users.id` | `owner_user_id` in MVP | `status` in `ACTIVE`, `INACTIVE`, `SUSPENDED`; `auto_accept_default` has a default | Store/Catalog |
-| `user_store_roles` | `id`, `user_id`, `store_id`, `role_id`, `status`, timestamps | `id` | `user_id -> users.id`; `store_id -> stores.id`; `role_id -> roles.id` | `(user_id, store_id, role_id)` | `status` in `ACTIVE`, `INACTIVE` | Common/Identity |
+| `user_store_roles` | `id`, `user_id`, nullable `store_id`, `role_id`, `status`, timestamps | `id` | `user_id -> users.id`; `store_id -> stores.id`; `role_id -> roles.id` | `(user_id, store_id, role_id)`; `(user_id, role_id)` where Store null | CUSTOMER global; MERCHANT/DRIVER Store-scoped; `status` in `ACTIVE`, `INACTIVE` | Identity |
 | `driver_profiles` | `id`, `user_id`, `store_id`, `is_available`, `vehicle_type`, `status`, timestamps | `id` | `user_id -> users.id`; `store_id -> stores.id` | `user_id` | `status` in `ACTIVE`, `SUSPENDED`, `INACTIVE`; unavailable by default | Delivery |
-| `driver_availability_audits` | `id`, `driver_profile_id`, `is_available`, `changed_by_user_id`, `changed_at`, `reason` | `id` | `driver_profile_id -> driver_profiles.id`; `changed_by_user_id -> users.id` | None required | `changed_at` required; `reason` optional | Delivery |
+| `driver_availability_history` | `id`, `driver_profile_id`, `is_available`, `changed_by_user_id`, `changed_at`, `reason` | `id` | `driver_profile_id -> driver_profiles.id`; `changed_by_user_id -> users.id` | None required | `changed_at` required; `reason` optional | Delivery |
 
 ### 5.2. Catalog and ProductVariant
 
@@ -207,7 +207,7 @@ The migration plan is intentionally separate from the current FF-01-05-1 design 
 |---|---|---|
 | V1 | `users`, `roles` | Root identity tables with no application foreign keys |
 | V2 | `stores`, `user_store_roles` | Store ownership and user role assignment |
-| V3 | `driver_profiles`, `driver_availability_audits` | Driver identity depends on users and stores |
+| V3 | `driver_profiles`, `driver_availability_history` | Historical design split; actual foundation is V1, role-scope update V9 |
 | V4 | `categories`, `store_categories` | Catalog category foundation |
 | V5 | `products`, `product_variants` | ProductVariant depends on Store and category assignment |
 | V6 | `inventory_locations`, `inventory_stock_records`, `inventory_capacity_records` | Inventory depends on variants and Stores |

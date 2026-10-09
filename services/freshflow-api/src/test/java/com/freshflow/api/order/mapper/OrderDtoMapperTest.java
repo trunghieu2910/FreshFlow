@@ -3,7 +3,7 @@ package com.freshflow.api.order.mapper;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.freshflow.api.catalog.model.Store;
-import com.freshflow.api.catalog.model.User;
+import com.freshflow.api.identity.model.User;
 import com.freshflow.api.order.dto.response.MerchantOrderDetailDto;
 import com.freshflow.api.order.dto.response.MerchantOrderSummaryDto;
 import com.freshflow.api.order.model.Order;
